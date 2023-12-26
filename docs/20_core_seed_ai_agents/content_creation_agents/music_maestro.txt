@@ -1,0 +1,122 @@
+```python
+import os
+import json
+from music21 import stream, note, midi, tempo
+from keras.models import Sequential
+from keras.layers import LSTM, Dropout, Dense, Activation
+from keras.callbacks import ModelCheckpoint
+import numpy as np
+
+class MusicMaestro:
+    def __init__(self, dataset_path='datasets/music_midi'):
+        self.dataset_path = dataset_path
+        self.notes = []
+        self.vocab_size = 0
+        self.network_input = []
+        self.network_output = []
+        self.model = None
+        self.int_to_note = {}
+        self.note_to_int = {}
+
+    def load_midi_files(self):
+        for file in os.listdir(self.dataset_path):
+            if file.endswith('.mid'):
+                midi_file = os.path.join(self.dataset_path, file)
+                midi_stream = midi.MidiFile()
+                midi_stream.open(midi_file)
+                midi_stream.read()
+                midi_stream.close()
+                notes_to_parse = midi_stream.tracks[0].events
+                for element in notes_to_parse:
+                    if isinstance(element, note.Note):
+                        self.notes.append(str(element.pitch))
+                    elif isinstance(element, note.Rest):
+                        self.notes.append('rest')
+                    elif isinstance(element, tempo.MetronomeMark):
+                        self.notes.append(f"tempo-{element.number}")
+
+    def prepare_sequences(self, sequence_length=100):
+        self.vocab_size = len(set(self.notes))
+        self.note_to_int = dict((note, number) for number, note in enumerate(set(self.notes)))
+        self.int_to_note = dict((number, note) for number, note in enumerate(set(self.notes)))
+
+        for i in range(0, len(self.notes) - sequence_length, 1):
+            sequence_in = self.notes[i:i + sequence_length]
+            sequence_out = self.notes[i + sequence_length]
+            self.network_input.append([self.note_to_int[char] for char in sequence_in])
+            self.network_output.append(self.note_to_int[sequence_out])
+
+        self.network_input = np.reshape(self.network_input, (len(self.network_input), sequence_length, 1))
+        self.network_input = self.network_input / float(self.vocab_size)
+        self.network_output = np.utils.to_categorical(self.network_output)
+
+    def create_network(self):
+        self.model = Sequential()
+        self.model.add(LSTM(512, input_shape=(self.network_input.shape[1], self.network_input.shape[2]), return_sequences=True))
+        self.model.add(Dropout(0.3))
+        self.model.add(LSTM(512, return_sequences=True))
+        self.model.add(Dropout(0.3))
+        self.model.add(LSTM(512))
+        self.model.add(Dense(256))
+        self.model.add(Dropout(0.3))
+        self.model.add(Dense(self.vocab_size))
+        self.model.add(Activation('softmax'))
+        self.model.compile(loss='categorical_crossentropy', optimizer='rmsprop')
+
+    def train_model(self, epochs=200, batch_size=64):
+        filepath = "weights-improvement-{epoch:02d}-{loss:.4f}-bigger.hdf5"
+        checkpoint = ModelCheckpoint(filepath, monitor='loss', verbose=0, save_best_only=True, mode='min')
+        callbacks_list = [checkpoint]
+        self.model.fit(self.network_input, self.network_output, epochs=epochs, batch_size=batch_size, callbacks=callbacks_list)
+
+    def generate_music(self, length=500):
+        start = np.random.randint(0, len(self.network_input)-1)
+        pattern = self.network_input[start]
+        prediction_output = []
+
+        for note_index in range(length):
+            prediction_input = np.reshape(pattern, (1, len(pattern), 1))
+            prediction_input = prediction_input / float(self.vocab_size)
+
+            prediction = self.model.predict(prediction_input, verbose=0)
+            index = np.argmax(prediction)
+            result = self.int_to_note[index]
+            prediction_output.append(result)
+
+            pattern = np.append(pattern, index)
+            pattern = pattern[1:len(pattern)]
+
+        return self.create_midi(prediction_output)
+
+    def create_midi(self, prediction_output):
+        offset = 0
+        output_notes = []
+
+        for pattern in prediction_output:
+            if ('tempo-' in pattern):
+                tempo_value = float(pattern.split('-')[1])
+                new_tempo = tempo.MetronomeMark(number=tempo_value)
+                output_notes.append(new_tempo)
+            elif pattern == 'rest':
+                new_note = note.Rest()
+                new_note.offset = offset
+                output_notes.append(new_note)
+            else:
+                new_note = note.Note(pattern)
+                new_note.offset = offset
+                new_note.storedInstrument = instrument.Piano()
+                output_notes.append(new_note)
+
+            offset += 0.5
+
+        midi_stream = stream.Stream(output_notes)
+        midi_stream.write('midi', fp='generated_music.mid')
+
+# Usage
+music_maestro = MusicMaestro()
+music_maestro.load_midi_files()
+music_maestro.prepare_sequences()
+music_maestro.create_network()
+music_maestro.train_model()
+generated_music = music_maestro.generate_music()
+```

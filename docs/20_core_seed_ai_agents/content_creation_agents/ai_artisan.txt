@@ -1,0 +1,51 @@
+```python
+import os
+import json
+from PIL import Image
+import requests
+from io import BytesIO
+from tensorflow.keras.models import load_model
+from tensorflow.keras.preprocessing.text import Tokenizer
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+
+class AIArtisan:
+    def __init__(self, model_path, tokenizer_path, max_length=100):
+        self.model = load_model(model_path)
+        with open(tokenizer_path) as f:
+            data = json.load(f)
+            self.tokenizer = Tokenizer()
+            self.tokenizer.word_index = data['word_index']
+        self.max_length = max_length
+
+    def generate_art_description(self, prompt):
+        sequence = self.tokenizer.texts_to_sequences([prompt])
+        padded_sequence = pad_sequences(sequence, maxlen=self.max_length, padding='post')
+        prediction = self.model.predict(padded_sequence)
+        return prediction
+
+    def fetch_image_from_url(self, image_url):
+        response = requests.get(image_url)
+        image = Image.open(BytesIO(response.content))
+        return image
+
+    def save_image(self, image, path):
+        image.save(path)
+
+    def create_art(self, prompt, image_url, output_path):
+        description = self.generate_art_description(prompt)
+        image = self.fetch_image_from_url(image_url)
+        art_path = os.path.join(output_path, 'generated_art.png')
+        self.save_image(image, art_path)
+        return {
+            'description': description,
+            'art_path': art_path
+        }
+
+# Usage example (this should be in a separate script or a main block):
+# ai_artisan = AIArtisan('path_to_model.h5', 'path_to_tokenizer.json')
+# result = ai_artisan.create_art('A serene landscape', 'https://example.com/image.jpg', 'output_directory')
+# print(f"Art Description: {result['description']}")
+# print(f"Art saved at: {result['art_path']}")
+```
+
+This code defines a class `AIArtisan` that can generate a description for a piece of art based on a text prompt, fetch an image from a URL, and save the image to a specified path. The usage example demonstrates how to instantiate the class, generate art, and print the results. The paths to the model, tokenizer, and image URL are placeholders and should be replaced with actual paths when deploying the code.

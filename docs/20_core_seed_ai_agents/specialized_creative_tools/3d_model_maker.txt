@@ -1,0 +1,61 @@
+```python
+import bpy
+from mathutils import Vector
+
+class ModelMakerAI:
+    def __init__(self):
+        self.model_name = "GeneratedModel"
+        self.default_material = self.create_material("DefaultMaterial", (0.8, 0.8, 0.8, 1.0))
+
+    def create_material(self, name, color):
+        material = bpy.data.materials.new(name)
+        material.diffuse_color = color
+        return material
+
+    def create_mesh(self, vertices, edges, faces, name):
+        mesh = bpy.data.meshes.new(name)
+        mesh.from_pydata(vertices, edges, faces)
+        mesh.update()
+        return mesh
+
+    def add_object_to_scene(self, mesh, location=(0, 0, 0)):
+        obj = bpy.data.objects.new(self.model_name, mesh)
+        bpy.context.collection.objects.link(obj)
+        bpy.context.view_layer.objects.active = obj
+        obj.location = location
+        obj.select_set(True)
+        return obj
+
+    def apply_material(self, obj, material):
+        if obj.data.materials:
+            obj.data.materials[0] = material
+        else:
+            obj.data.materials.append(material)
+
+    def generate_model(self, parameters):
+        # Example parameters: {'type': 'cube', 'size': 1}
+        if parameters['type'] == 'cube':
+            size = parameters['size']
+            verts = [(-size, -size, -size), (size, -size, -size),
+                     (size, size, -size), (-size, size, -size),
+                     (-size, -size, size), (size, -size, size),
+                     (size, size, size), (-size, size, size)]
+            edges = []
+            faces = [(0, 1, 2, 3), (4, 5, 6, 7), (0, 1, 5, 4),
+                     (1, 2, 6, 5), (2, 3, 7, 6), (3, 0, 4, 7)]
+            mesh = self.create_mesh(verts, edges, faces, self.model_name)
+            obj = self.add_object_to_scene(mesh)
+            self.apply_material(obj, self.default_material)
+            return obj
+
+        # Additional model types can be added with elif blocks
+        # elif parameters['type'] == 'sphere':
+        #     ...
+
+# Example usage:
+model_maker = ModelMakerAI()
+model_parameters = {'type': 'cube', 'size': 1}
+model_maker.generate_model(model_parameters)
+```
+
+This Python script is designed to be used within Blender, a popular open-source 3D modeling software. The `ModelMakerAI` class provides methods to create a 3D model with a default material, add it to the scene, and apply materials. The `generate_model` method currently supports creating a cube with customizable size, but can be extended to support more types of models by adding additional conditions.

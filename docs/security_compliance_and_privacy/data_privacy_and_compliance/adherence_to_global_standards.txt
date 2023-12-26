@@ -1,0 +1,52 @@
+```python
+import os
+from flask import Flask, request, jsonify
+from werkzeug.exceptions import BadRequest
+from functools import wraps
+
+app = Flask(__name__)
+
+# Define a decorator to check for API key in requests
+def require_api_key(view_function):
+    @wraps(view_function)
+    def decorated_function(*args, **kwargs):
+        if request.headers.get('X-API-KEY') != os.environ.get('API_KEY'):
+            raise BadRequest('Invalid or missing API key')
+        return view_function(*args, **kwargs)
+    return decorated_function
+
+# Define a function to check GDPR compliance
+def check_gdpr_compliance(data):
+    # Placeholder for GDPR compliance logic
+    # In a real-world scenario, this would involve checking data handling practices,
+    # consent mechanisms, data retention policies, etc.
+    return 'compliant' if 'consent' in data and data['consent'] is True else 'non-compliant'
+
+# Define a function to check CCPA compliance
+def check_ccpa_compliance(data):
+    # Placeholder for CCPA compliance logic
+    # Similar to GDPR, this would involve checking for user data control mechanisms,
+    # opt-out options, and transparency in data usage.
+    return 'compliant' if 'opt_out' in data and data['opt_out'] is True else 'non-compliant'
+
+# Define an endpoint to check data privacy compliance
+@app.route('/check_compliance', methods=['POST'])
+@require_api_key
+def check_compliance():
+    data = request.json
+    if not data:
+        raise BadRequest('No data provided')
+
+    gdpr_status = check_gdpr_compliance(data)
+    ccpa_status = check_ccpa_compliance(data)
+
+    return jsonify({
+        'gdpr_compliance': gdpr_status,
+        'ccpa_compliance': ccpa_status
+    })
+
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0')
+```
+
+This Python Flask application provides an endpoint to check for GDPR and CCPA compliance based on provided data. It includes a decorator to require an API key for accessing the endpoint, ensuring that only authorized requests are processed. The compliance check functions are placeholders and should be replaced with actual compliance logic in a production environment.

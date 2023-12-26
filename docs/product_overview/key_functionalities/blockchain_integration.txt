@@ -1,0 +1,119 @@
+```python
+# Import required libraries
+from web3 import Web3
+from solcx import compile_standard, install_solc
+import json
+from web3.middleware import geth_poa_middleware
+
+# Define connection to Arbitrum Testnet
+w3 = Web3(Web3.HTTPProvider('https://rinkeby.arbitrum.io/rpc'))
+w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+
+# Check connection to the blockchain
+assert w3.isConnected()
+
+# Install the Solidity compiler (if not already installed)
+install_solc('0.8.0')
+
+# Smart contract code for Elysium Marketplace
+contract_source_code = '''
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC721/ERC721.sol";
+import "@openzeppelin/contracts/token/ERC1155/ERC1155.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ElysiumMarketplace is ERC721, ERC1155, Ownable {
+    // Unique identifier for each digital asset
+    uint256 private _currentTokenId = 0;
+
+    // Mapping from token ID to creator address
+    mapping(uint256 => address) public creators;
+
+    // Event emitted when a new digital asset is created
+    event AssetCreated(uint256 indexed tokenId, address creator, string uri);
+
+    constructor() ERC721("ElysiumToken", "ET") ERC1155("https://api.elysium.com/assets/{id}.json") {}
+
+    // Create a new unique digital asset
+    function createUniqueAsset(string memory tokenURI) public returns (uint256) {
+        uint256 newTokenId = _currentTokenId++;
+        _mint(msg.sender, newTokenId);
+        _setTokenURI(newTokenId, tokenURI);
+        creators[newTokenId] = msg.sender;
+        emit AssetCreated(newTokenId, msg.sender, tokenURI);
+        return newTokenId;
+    }
+
+    // Create a new semi-fungible digital asset
+    function createSemiFungibleAsset(uint256 id, uint256 amount, bytes memory data) public {
+        _mint(msg.sender, id, amount, data);
+        creators[id] = msg.sender;
+        emit AssetCreated(id, msg.sender, "");
+    }
+
+    // Override required due to multiple inheritance
+    function _beforeTokenTransfer(address from, address to, uint256 tokenId) internal override(ERC721, ERC1155) {
+        super._beforeTokenTransfer(from, to, tokenId);
+    }
+
+    // Override required due to multiple inheritance
+    function supportsInterface(bytes4 interfaceId) public view virtual override(ERC721, ERC1155) returns (bool) {
+        return super.supportsInterface(interfaceId);
+    }
+}
+'''
+
+# Compile the smart contract
+compiled_sol = compile_standard({
+    "language": "Solidity",
+    "sources": {"ElysiumMarketplace.sol": {"content": contract_source_code}},
+    "settings": {
+        "outputSelection": {
+            "*": {
+                "*": ["abi", "metadata", "evm.bytecode", "evm.bytecode.sourceMap"]
+            }
+        }
+    },
+},
+solc_version='0.8.0')
+
+# Save the compiled contract to a file
+with open('ElysiumMarketplace.json', 'w') as f:
+    json.dump(compiled_sol, f)
+
+# Get bytecode
+bytecode = compiled_sol['contracts']['ElysiumMarketplace.sol']['ElysiumMarketplace']['evm']['bytecode']['object']
+
+# Get ABI
+abi = json.loads(compiled_sol['contracts']['ElysiumMarketplace.sol']['ElysiumMarketplace']['metadata'])['output']['abi']
+
+# Set up the contract in Python
+ElysiumMarketplace = w3.eth.contract(abi=abi, bytecode=bytecode)
+
+# Function to deploy the contract
+def deploy_contract():
+    # Set up the transaction
+    tx = ElysiumMarketplace.constructor().buildTransaction({
+        'from': w3.eth.accounts[0],
+        'nonce': w3.eth.getTransactionCount(w3.eth.accounts[0]),
+        'gas': 1728712,
+        'gasPrice': w3.toWei('21', 'gwei')
+    })
+
+    # Sign the transaction
+    signed_tx = w3.eth.account.sign_transaction(tx, private_key='YOUR_PRIVATE_KEY')
+
+    # Send the transaction
+    tx_hash = w3.eth.sendRawTransaction(signed_tx.rawTransaction)
+
+    # Wait for the transaction to be mined
+    tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+
+    # Return the address of the deployed contract
+    return tx_receipt.contractAddress
+
+# Deploy the contract and get its address
+contract_address = deploy_contract()
+print(f'Contract deployed at address: {contract_address}')
+```

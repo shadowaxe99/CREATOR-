@@ -1,0 +1,72 @@
+```python
+# File: loyalty_points.py
+# Description: This module handles the loyalty points system for consumer rewards on the Elysium Marketplace.
+
+from datetime import datetime
+from database import db_session
+from models import User, Transaction, LoyaltyPoints
+
+class LoyaltyPointsSystem:
+    def __init__(self):
+        self.loyalty_points_ratio = 0.01  # Ratio of purchase amount to loyalty points
+
+    def add_loyalty_points(self, user_id, purchase_amount):
+        """
+        Adds loyalty points to a user's account based on the purchase amount.
+        """
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            raise ValueError("User not found")
+
+        points_to_add = purchase_amount * self.loyalty_points_ratio
+        user.loyalty_points += points_to_add
+        db_session.commit()
+
+    def redeem_loyalty_points(self, user_id, points):
+        """
+        Redeems loyalty points for a user, converting them into Elysium Tokens (ET).
+        """
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            raise ValueError("User not found")
+
+        if user.loyalty_points < points:
+            raise ValueError("Insufficient loyalty points")
+
+        user.loyalty_points -= points
+        # Assuming 1 loyalty point equals 1 ET token for simplicity
+        user.elysium_tokens += points
+        db_session.commit()
+
+    def get_loyalty_points(self, user_id):
+        """
+        Retrieves the current loyalty points balance for a user.
+        """
+        user = User.query.filter_by(id=user_id).first()
+        if not user:
+            raise ValueError("User not found")
+
+        return user.loyalty_points
+
+    def log_transaction(self, user_id, points, transaction_type):
+        """
+        Logs the loyalty points transaction for auditing and tracking purposes.
+        """
+        transaction = Transaction(
+            user_id=user_id,
+            points=points,
+            transaction_type=transaction_type,
+            timestamp=datetime.now()
+        )
+        db_session.add(transaction)
+        db_session.commit()
+
+# Example usage:
+# loyalty_system = LoyaltyPointsSystem()
+# loyalty_system.add_loyalty_points(user_id=1, purchase_amount=100)
+# loyalty_system.redeem_loyalty_points(user_id=1, points=10)
+# points_balance = loyalty_system.get_loyalty_points(user_id=1)
+# print(f"User has {points_balance} loyalty points.")
+```
+
+Please note that this code assumes the existence of a database session (`db_session`), and user and transaction models (`User`, `Transaction`, `LoyaltyPoints`) which should be defined elsewhere in the application. The code is designed to be part of a larger system and may need to be integrated with other modules for full functionality.

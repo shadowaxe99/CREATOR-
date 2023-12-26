@@ -1,0 +1,60 @@
+```python
+# File: participation_bonuses.py
+# Description: Handles the logic for distributing participation bonuses to creators on the Elysium Marketplace.
+
+from web3 import Web3
+from contracts import ElysiumTokenContract
+from utils import send_transaction, get_current_block_number
+
+class ParticipationBonusManager:
+    def __init__(self, web3_instance: Web3, contract_address: str, owner_address: str):
+        self.web3 = web3_instance
+        self.contract_address = contract_address
+        self.owner_address = owner_address
+        self.elysium_token_contract = ElysiumTokenContract(self.web3, self.contract_address)
+
+    def distribute_participation_bonuses(self, event_id: str, participant_addresses: list, bonus_amount: int):
+        """
+        Distributes participation bonuses to creators who actively participated in community events, forums, and collaborations.
+        :param event_id: Unique identifier for the event or collaboration.
+        :param participant_addresses: List of addresses of the participants to receive the bonus.
+        :param bonus_amount: The amount of ET tokens each participant will receive as a bonus.
+        """
+        current_block = get_current_block_number(self.web3)
+        for address in participant_addresses:
+            transaction = self.elysium_token_contract.functions.transfer(address, bonus_amount).buildTransaction({
+                'chainId': 42161,  # Arbitrum Mainnet chain ID
+                'gas': 2000000,
+                'gasPrice': self.web3.toWei('10', 'gwei'),
+                'nonce': self.web3.eth.getTransactionCount(self.owner_address),
+                'from': self.owner_address,
+                'value': 0
+            })
+            send_transaction(self.web3, transaction, self.owner_address)
+
+        print(f"Participation bonuses for event {event_id} distributed at block {current_block}.")
+
+# Example usage:
+if __name__ == "__main__":
+    # Initialize web3 connection to Arbitrum network
+    arbitrum_rpc_url = "https://arb1.arbitrum.io/rpc"
+    web3_instance = Web3(Web3.HTTPProvider(arbitrum_rpc_url))
+    assert web3_instance.isConnected(), "Web3 connection to Arbitrum failed."
+
+    # Contract and owner details
+    elysium_token_contract_address = "0xYourContractAddressHere"
+    marketplace_owner_address = "0xYourOwnerAddressHere"
+
+    # Initialize ParticipationBonusManager
+    bonus_manager = ParticipationBonusManager(web3_instance, elysium_token_contract_address, marketplace_owner_address)
+
+    # Define event details and participants
+    event_identifier = "Event123"
+    participants = ["0xAddress1", "0xAddress2", "0xAddress3"]
+    bonus_amount_per_participant = 100  # Amount of ET tokens
+
+    # Distribute participation bonuses
+    bonus_manager.distribute_participation_bonuses(event_identifier, participants, bonus_amount_per_participant)
+```
+
+This Python script uses the `web3.py` library to interact with the Ethereum blockchain, specifically the Arbitrum network. It defines a `ParticipationBonusManager` class responsible for distributing Elysium Tokens (ET) as participation bonuses to creators who actively participate in community events, forums, and collaborations. The script includes an example usage that sets up the necessary web3 connection, contract, and owner details, and then calls the `distribute_participation_bonuses` method with a sample event identifier, participant addresses, and bonus amount.

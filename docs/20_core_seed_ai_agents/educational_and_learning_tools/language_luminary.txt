@@ -1,0 +1,50 @@
+```python
+# LanguageLuminary.py
+
+from transformers import MarianMTModel, MarianTokenizer
+from langdetect import detect
+from typing import List
+
+class LanguageLuminary:
+    def __init__(self):
+        # Initialize translation models for different language pairs
+        self.supported_languages = {
+            'en-fr': 'Helsinki-NLP/opus-mt-en-fr',
+            'fr-en': 'Helsinki-NLP/opus-mt-fr-en',
+            # Add more language pairs as needed
+        }
+        self.translation_models = {}
+        self.tokenizers = {}
+        for lang_pair, model_name in self.supported_languages.items():
+            tokenizer = MarianTokenizer.from_pretrained(model_name)
+            model = MarianMTModel.from_pretrained(model_name)
+            self.tokenizers[lang_pair] = tokenizer
+            self.translation_models[lang_pair] = model
+
+    def translate(self, text: str, target_language: str) -> str:
+        # Detect the source language
+        source_language = detect(text)
+        lang_pair = f'{source_language}-{target_language}'
+        
+        # Check if the translation for the language pair is supported
+        if lang_pair not in self.translation_models:
+            raise ValueError(f"Translation from {source_language} to {target_language} is not supported.")
+        
+        # Translate the text
+        tokenizer = self.tokenizers[lang_pair]
+        model = self.translation_models[lang_pair]
+        translated = model.generate(**tokenizer.prepare_translation_batch([text]))
+        return tokenizer.decode(translated[0], skip_special_tokens=True)
+
+    def list_supported_languages(self) -> List[str]:
+        return list(self.supported_languages.keys())
+
+# Example usage:
+# luminary = LanguageLuminary()
+# translated_text = luminary.translate("Hello, world!", "fr")
+# print(translated_text)
+# supported_langs = luminary.list_supported_languages()
+# print(supported_langs)
+```
+
+This Python code defines a class `LanguageLuminary` that uses the `transformers` library to perform language translation. It initializes translation models for different language pairs and provides methods to translate text and list supported languages. The `langdetect` library is used to automatically detect the source language of the input text. The example usage at the bottom is commented out and can be used to demonstrate how the class can be utilized.

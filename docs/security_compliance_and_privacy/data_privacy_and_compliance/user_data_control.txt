@@ -1,0 +1,67 @@
+```python
+from flask import Flask, request, jsonify
+from flask_sqlalchemy import SQLAlchemy
+from marshmallow import Schema, fields, validate, ValidationError
+import os
+
+# Initialize Flask app and SQLAlchemy
+app = Flask(__name__)
+basedir = os.path.abspath(os.path.dirname(__file__))
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'elysium.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# User data control model
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    consent = db.Column(db.Boolean, default=False, nullable=False)
+
+    def __init__(self, username, email, consent):
+        self.username = username
+        self.email = email
+        self.consent = consent
+
+# User data control schema
+class UserSchema(Schema):
+    id = fields.Int(dump_only=True)
+    username = fields.Str(required=True, validate=validate.Length(min=1))
+    email = fields.Email(required=True)
+    consent = fields.Boolean(required=True)
+
+user_schema = UserSchema()
+users_schema = UserSchema(many=True)
+
+# Endpoint to give users control over their data
+@app.route('/user/<int:user_id>/data_control', methods=['GET', 'PATCH'])
+def user_data_control(user_id):
+    user = User.query.get(user_id)
+    if not user:
+        return jsonify({"message": "User not found"}), 404
+
+    if request.method == 'GET':
+        # Return user's data and consent status
+        return user_schema.dump(user)
+
+    elif request.method == 'PATCH':
+        # Update user's consent status
+        json_input = request.get_json()
+        try:
+            data = user_schema.load(json_input)
+        except ValidationError as err:
+            return err.messages, 422
+
+        user.consent = data['consent']
+        db.session.commit()
+        return user_schema.dump(user)
+
+# Create tables
+with app.app_context():
+    db.create_all()
+
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+This code snippet creates a Flask application with a SQLite database to manage user data control. It includes a User model and schema for serialization, and an endpoint to retrieve and update a user's consent status. The database and tables are created if they do not exist when the application starts.

@@ -1,0 +1,52 @@
+```python
+import json
+from web3 import Web3
+from web3.middleware import geth_poa_middleware
+from eth_account.messages import encode_defunct
+
+class LegalLiaisonAgent:
+    def __init__(self, web3_provider, contract_address, abi_path):
+        self.web3 = Web3(Web3.HTTPProvider(web3_provider))
+        self.web3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        self.contract_address = self.web3.toChecksumAddress(contract_address)
+        with open(abi_path, 'r') as abi_file:
+            self.contract_abi = json.load(abi_file)
+        self.contract = self.web3.eth.contract(address=self.contract_address, abi=self.contract_abi)
+
+    def get_legal_guidance(self, user_address, content_id):
+        user_address_checksum = self.web3.toChecksumAddress(user_address)
+        try:
+            guidance = self.contract.functions.getLegalGuidance(content_id).call({'from': user_address_checksum})
+            return guidance
+        except Exception as e:
+            print(f"An error occurred while fetching legal guidance: {e}")
+            return None
+
+    def submit_query(self, user_address, query):
+        user_address_checksum = self.web3.toChecksumAddress(user_address)
+        message = encode_defunct(text=query)
+        signed_message = self.web3.eth.account.sign_message(message, private_key="YOUR_PRIVATE_KEY")
+        try:
+            tx_hash = self.contract.functions.submitLegalQuery(query, signed_message.signature).transact({'from': user_address_checksum})
+            receipt = self.web3.eth.waitForTransactionReceipt(tx_hash)
+            return receipt
+        except Exception as e:
+            print(f"An error occurred while submitting legal query: {e}")
+            return None
+
+# Example usage:
+# Initialize the agent with the appropriate web3 provider, contract address, and path to the ABI
+legal_liaison_agent = LegalLiaisonAgent(web3_provider='https://arbitrum-rinkeby.infura.io/v3/YOUR_INFURA_PROJECT_ID',
+                                        contract_address='0xYourContractAddress',
+                                        abi_path='path_to_your_contract_abi.json')
+
+# Get legal guidance for a specific content ID
+guidance = legal_liaison_agent.get_legal_guidance(user_address='0xUserAddress', content_id=123)
+print(guidance)
+
+# Submit a legal query
+receipt = legal_liaison_agent.submit_query(user_address='0xUserAddress', query='Can I use this image for commercial purposes?')
+print(receipt)
+```
+
+This code provides a Python class `LegalLiaisonAgent` that interacts with a smart contract on the Arbitrum blockchain to provide legal guidance and allow users to submit legal queries. The class uses the `web3.py` library to communicate with the Ethereum blockchain. It assumes that the smart contract has functions `getLegalGuidance` and `submitLegalQuery` defined, which are used to retrieve legal advice and submit queries, respectively. The `submit_query` function also demonstrates how to sign a message with a private key, which is a common requirement for authenticated transactions on the blockchain. The example usage shows how to initialize the agent and call its methods. Please replace `'YOUR_INFURA_PROJECT_ID'`, `'0xYourContractAddress'`, `'path_to_your_contract_abi.json'`, `'0xUserAddress'`, and `'YOUR_PRIVATE_KEY'` with actual values.

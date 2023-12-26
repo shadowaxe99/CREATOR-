@@ -1,0 +1,71 @@
+```python
+import tensorflow as tf
+from tensorflow.keras.layers import LSTM, Dense, Embedding
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.preprocessing.sequence import pad_sequences
+from tensorflow.keras.preprocessing.text import Tokenizer
+import numpy as np
+import json
+
+class MusicMaestroElite:
+    def __init__(self, genres, dataset_path, model_storage_path):
+        self.genres = genres
+        self.dataset_path = dataset_path
+        self.model_storage_path = model_storage_path
+        self.models = {}
+        self.tokenizer = Tokenizer()
+        self.max_sequence_len = 100
+        self.embedding_dim = 100
+
+    def load_datasets(self):
+        self.datasets = {}
+        for genre in self.genres:
+            with open(f"{self.dataset_path}/{genre}.json", 'r') as file:
+                self.datasets[genre] = json.load(file)
+                self.tokenizer.fit_on_texts(self.datasets[genre])
+
+    def create_model(self):
+        model = Sequential()
+        vocab_size = len(self.tokenizer.word_index) + 1
+        model.add(Embedding(vocab_size, self.embedding_dim, input_length=self.max_sequence_len - 1))
+        model.add(LSTM(150, return_sequences=True))
+        model.add(LSTM(100))
+        model.add(Dense(vocab_size, activation='softmax'))
+        model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
+        return model
+
+    def train_models(self):
+        for genre in self.genres:
+            sequences = self.tokenizer.texts_to_sequences(self.datasets[genre])
+            sequences = np.array(pad_sequences(sequences, maxlen=self.max_sequence_len, padding='pre'))
+            X, y = sequences[:, :-1], sequences[:, -1]
+            y = tf.keras.utils.to_categorical(y, num_classes=len(self.tokenizer.word_index) + 1)
+            model = self.create_model()
+            model.fit(X, y, epochs=100, verbose=1)
+            self.models[genre] = model
+            model.save(f"{self.model_storage_path}/{genre}_model.h5")
+
+    def generate_music(self, genre, seed_text, num_words):
+        if genre not in self.models:
+            raise ValueError(f"Genre {genre} not found in trained models.")
+        model = self.models[genre]
+        for _ in range(num_words):
+            token_list = self.tokenizer.texts_to_sequences([seed_text])[0]
+            token_list = pad_sequences([token_list], maxlen=self.max_sequence_len - 1, padding='pre')
+            predicted = model.predict_classes(token_list, verbose=0)
+            output_word = ""
+            for word, index in self.tokenizer.word_index.items():
+                if index == predicted:
+                    output_word = word
+                    break
+            seed_text += " " + output_word
+        return seed_text
+
+# Example usage:
+# genres = ['classical', 'jazz', 'pop']
+# maestro = MusicMaestroElite(genres, 'path_to_datasets', 'path_to_models')
+# maestro.load_datasets()
+# maestro.train_models()
+# music = maestro.generate_music('jazz', 'seed text for jazz music', 50)
+# print(music)
+```

@@ -1,0 +1,83 @@
+import os
+import secrets
+from flask import Flask, request, jsonify, abort
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from itsdangerous import TimedJSONWebSignatureSerializer as Serializer
+
+app = Flask(__name__)
+app.config['SECRET_KEY'] = secrets.token_hex(16)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///elysium.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password_hash = db.Column(db.String(128), nullable=False)
+    mfa_secret = db.Column(db.String(20), nullable=True)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def generate_auth_token(self, expires_in=600):
+        s = Serializer(app.config['SECRET_KEY'], expires_in)
+        return s.dumps({'user_id': self.id}).decode('utf-8')
+
+    @staticmethod
+    def verify_auth_token(token):
+        s = Serializer(app.config['SECRET_KEY'])
+        try:
+            data = s.loads(token)
+        except:
+            return None
+        return User.query.get(data['user_id'])
+
+@app.route('/register', methods=['POST'])
+def register():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    if username is None or password is None:
+        abort(400)  # missing arguments
+    if User.query.filter_by(username=username).first() is not None:
+        abort(400)  # existing user
+    user = User(username=username)
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({'username': user.username}), 201, {'Location': f'/user/{user.id}'}
+
+@app.route('/login', methods=['POST'])
+def login():
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
+    mfa_code = data.get('mfa_code')
+    user = User.query.filter_by(username=username).first()
+    if user is None or not user.check_password(password):
+        abort(400)  # invalid username or password
+    # Here you would verify the MFA code with the user's mfa_secret
+    # For example, using pyotp: pyotp.TOTP(user.mfa_secret).verify(mfa_code)
+    # This is a placeholder for MFA verification logic
+    if mfa_code != "123456":  # Replace with actual MFA verification
+        abort(400)  # invalid MFA code
+    token = user.generate_auth_token()
+    return jsonify({'token': token})
+
+@app.route('/protected', methods=['GET'])
+def get_protected():
+    token = request.headers.get('Authorization')
+    if token is None:
+        abort(401)  # unauthorized
+    user = User.verify_auth_token(token)
+    if user is None:
+        abort(401)  # unauthorized
+    return jsonify({'data': 'Secret data'})
+
+if __name__ == '__main__':
+    db.create_all()
+    app.run(debug=True)
