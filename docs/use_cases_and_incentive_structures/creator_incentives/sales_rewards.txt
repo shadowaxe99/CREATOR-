@@ -1,0 +1,97 @@
+```python
+# Import necessary libraries
+from web3 import Web3
+from solc import compile_standard
+from web3.contract import ConciseContract
+
+# Define the smart contract for handling sales rewards
+smart_contract_code = '''
+pragma solidity ^0.8.0;
+
+contract SalesRewards {
+    mapping(address => uint256) public rewardsBalance;
+    address public owner;
+    ERC20 public elysiumToken;
+
+    constructor(address _tokenAddress) {
+        owner = msg.sender;
+        elysiumToken = ERC20(_tokenAddress);
+    }
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only owner can call this function.");
+        _;
+    }
+
+    function rewardCreator(address creator, uint256 amount) public onlyOwner {
+        require(elysiumToken.transfer(creator, amount), "Token transfer failed.");
+        rewardsBalance[creator] += amount;
+    }
+
+    function getRewardBalance(address creator) public view returns (uint256) {
+        return rewardsBalance[creator];
+    }
+}
+
+interface ERC20 {
+    function transfer(address to, uint256 value) external returns (bool);
+}
+'''
+
+# Compile the smart contract
+compiled_sol = compile_standard({
+    "language": "Solidity",
+    "sources": {"SalesRewards.sol": {"content": smart_contract_code}},
+    "settings": {
+        "outputSelection": {
+            "*": {
+                "*": ["metadata", "evm.bytecode", "evm.bytecode.sourceMap"]
+            }
+        }
+    },
+})
+
+# Connect to the Arbitrum blockchain
+w3 = Web3(Web3.HTTPProvider('https://arbitrum-rinkeby.infura.io/v3/YOUR_INFURA_PROJECT_ID'))
+assert w3.isConnected(), "Failed to connect to the Arbitrum blockchain."
+
+# Set up the contract
+contract_interface = compiled_sol['contracts']['SalesRewards.sol']['SalesRewards']
+SalesRewards = w3.eth.contract(abi=contract_interface['abi'], bytecode=contract_interface['evm']['bytecode']['object'])
+
+# Deploy the contract
+owner_account = w3.eth.account.from_key('YOUR_PRIVATE_KEY')
+SalesRewards_deploy_txn = SalesRewards.constructor('ADDRESS_OF_ELYSIUM_TOKEN_CONTRACT').buildTransaction({
+    'from': owner_account.address,
+    'nonce': w3.eth.getTransactionCount(owner_account.address),
+    'gas': 1728712,
+    'gasPrice': w3.toWei('21', 'gwei')
+})
+
+# Sign the transaction
+signed_txn = w3.eth.account.signTransaction(SalesRewards_deploy_txn, private_key=owner_account.key)
+
+# Send the transaction
+tx_hash = w3.eth.sendRawTransaction(signed_txn.rawTransaction)
+
+# Wait for the transaction to be mined
+tx_receipt = w3.eth.waitForTransactionReceipt(tx_hash)
+
+# Get the contract address
+sales_rewards_contract_address = tx_receipt.contractAddress
+
+# Create a contract instance
+sales_rewards = w3.eth.contract(
+    address=sales_rewards_contract_address,
+    abi=SalesRewards.abi,
+    ContractFactoryClass=ConciseContract
+)
+
+# Function to reward a creator
+def reward_creator(creator_address, reward_amount):
+    reward_txn = sales_rewards.rewardCreator(creator_address, reward_amount, transact={'from': owner_account.address})
+    return reward_txn
+
+# Example usage
+# reward_creator('0xCreatorAddress', 1000)
+```

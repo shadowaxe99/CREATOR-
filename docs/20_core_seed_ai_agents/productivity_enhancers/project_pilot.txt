@@ -1,0 +1,84 @@
+```python
+import datetime
+from project_management_schema import Project
+from user_schema import User
+from collaboration_schema import Collaboration
+from ai_agent_schema import AIAgent
+
+class ProjectPilot(AIAgent):
+    def __init__(self, agent_id, name, description):
+        super().__init__(agent_id, name, description)
+        self.projects = []
+
+    def create_project(self, title, description, creator_id):
+        new_project = Project(
+            project_id=self.generate_project_id(),
+            title=title,
+            description=description,
+            creator=User.get_user_by_id(creator_id),
+            collaborators=[],
+            tasks=[],
+            start_date=datetime.datetime.now(),
+            end_date=None,
+            status='Active'
+        )
+        self.projects.append(new_project)
+        return new_project
+
+    def add_collaborator(self, project_id, collaborator_id):
+        project = self.get_project_by_id(project_id)
+        collaborator = User.get_user_by_id(collaborator_id)
+        if collaborator and project:
+            collaboration = Collaboration(
+                project=project,
+                collaborator=collaborator,
+                start_date=datetime.datetime.now(),
+                end_date=None,
+                status='Active'
+            )
+            project.collaborators.append(collaboration)
+            return collaboration
+        return None
+
+    def add_task(self, project_id, task_title, task_description, due_date):
+        project = self.get_project_by_id(project_id)
+        if project:
+            task = {
+                'task_id': self.generate_task_id(),
+                'title': task_title,
+                'description': task_description,
+                'due_date': due_date,
+                'status': 'Pending'
+            }
+            project.tasks.append(task)
+            return task
+        return None
+
+    def update_project_status(self, project_id, new_status):
+        project = self.get_project_by_id(project_id)
+        if project:
+            project.status = new_status
+            return True
+        return False
+
+    def get_project_by_id(self, project_id):
+        for project in self.projects:
+            if project.project_id == project_id:
+                return project
+        return None
+
+    @staticmethod
+    def generate_project_id():
+        return f'PRJ_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}'
+
+    @staticmethod
+    def generate_task_id():
+        return f'TSK_{datetime.datetime.now().strftime("%Y%m%d%H%M%S%f")}'
+
+# Example usage:
+# project_pilot = ProjectPilot(agent_id='PP001', name='Project Pilot', description='Manages creative projects, tracking progress and deadlines.')
+# new_project = project_pilot.create_project('New Game Development', 'A project for developing a new indie game', creator_id='USR123')
+# project_pilot.add_collaborator(new_project.project_id, 'USR456')
+# project_pilot.add_task(new_project.project_id, 'Design Main Character', 'Create the design for the main character of the game', datetime.datetime(2023, 12, 31))
+# project_pilot.update_project_status(new_project.project_id, 'Completed')
+```

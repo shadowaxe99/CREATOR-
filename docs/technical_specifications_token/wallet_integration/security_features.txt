@@ -1,0 +1,107 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/utils/cryptography/MerkleProof.sol";
+import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import "@openzeppelin/contracts/utils/structs/EnumerableSet.sol";
+
+contract WalletSecurity is Ownable, ReentrancyGuard {
+    using ECDSA for bytes32;
+    using EnumerableSet for EnumerableSet.AddressSet;
+
+    // State variables
+    IERC20 public immutable elysiumToken;
+    EnumerableSet.AddressSet private authorizedSigners;
+    mapping(address => uint256) private nonces;
+    mapping(address => bool) private isMultiSigWallet;
+
+    // Events
+    event MultiSigWalletAdded(address indexed wallet);
+    event MultiSigWalletRemoved(address indexed wallet);
+    event AuthorizedSignerAdded(address indexed signer);
+    event AuthorizedSignerRemoved(address indexed signer);
+    event TransactionExecuted(address indexed from, address indexed to, uint256 amount, bytes data);
+
+    // Constructor
+    constructor(address _elysiumTokenAddress) {
+        require(_elysiumTokenAddress != address(0), "ElysiumToken address cannot be zero");
+        elysiumToken = IERC20(_elysiumTokenAddress);
+    }
+
+    // Modifiers
+    modifier onlyAuthorizedSigners() {
+        require(authorizedSigners.contains(msg.sender), "Caller is not an authorized signer");
+        _;
+    }
+
+    // Functions
+    function addMultiSigWallet(address _wallet) external onlyOwner {
+        require(_wallet != address(0), "Wallet address cannot be zero");
+        require(!isMultiSigWallet[_wallet], "Wallet is already a multi-sig wallet");
+        isMultiSigWallet[_wallet] = true;
+        emit MultiSigWalletAdded(_wallet);
+    }
+
+    function removeMultiSigWallet(address _wallet) external onlyOwner {
+        require(isMultiSigWallet[_wallet], "Wallet is not a multi-sig wallet");
+        isMultiSigWallet[_wallet] = false;
+        emit MultiSigWalletRemoved(_wallet);
+    }
+
+    function addAuthorizedSigner(address _signer) external onlyOwner {
+        require(_signer != address(0), "Signer address cannot be zero");
+        authorizedSigners.add(_signer);
+        emit AuthorizedSignerAdded(_signer);
+    }
+
+    function removeAuthorizedSigner(address _signer) external onlyOwner {
+        require(authorizedSigners.contains(_signer), "Signer is not authorized");
+        authorizedSigners.remove(_signer);
+        emit AuthorizedSignerRemoved(_signer);
+    }
+
+    function executeTransaction(
+        address _to,
+        uint256 _amount,
+        bytes calldata _data,
+        bytes[] calldata _signatures
+    ) external nonReentrant {
+        require(isMultiSigWallet[msg.sender], "Caller is not a multi-sig wallet");
+        require(_to != address(0), "Recipient address cannot be zero");
+        require(_amount > 0, "Amount must be greater than zero");
+        require(_signatures.length >= 2, "Requires at least two signatures");
+
+        // Verify signatures
+        bytes32 txHash = keccak256(abi.encodePacked(msg.sender, _to, _amount, _data, nonces[msg.sender]));
+        nonces[msg.sender]++;
+        uint256 validSignatures;
+        for (uint256 i = 0; i < _signatures.length; i++) {
+            if (authorizedSigners.contains(txHash.toEthSignedMessageHash().recover(_signatures[i]))) {
+                validSignatures++;
+            }
+        }
+        require(validSignatures >= 2, "Not enough valid signatures");
+
+        // Execute transaction
+        (bool success, ) = _to.call{value: _amount}(_data);
+        require(success, "Transaction execution failed");
+        emit TransactionExecuted(msg.sender, _to, _amount, _data);
+    }
+
+    function getNonce(address _wallet) external view returns (uint256) {
+        return nonces[_wallet];
+    }
+
+    function isWalletMultiSig(address _wallet) external view returns (bool) {
+        return isMultiSigWallet[_wallet];
+    }
+
+    function isSignerAuthorized(address _signer) external view returns (bool) {
+        return authorizedSigners.contains(_signer);
+    }
+}
+```

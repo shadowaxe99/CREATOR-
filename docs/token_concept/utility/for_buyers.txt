@@ -1,0 +1,55 @@
+```json
+{
+  "description": "Utility of Elysium Token (ET) for Buyers",
+  "utility": {
+    "purchaseDigitalAssets": {
+      "function": "purchaseAsset",
+      "description": "Allows buyers to use ET tokens to purchase digital assets listed on the Elysium Marketplace.",
+      "parameters": {
+        "assetId": "Unique identifier of the digital asset",
+        "buyerAddress": "Address of the buyer's wallet",
+        "tokenAmount": "Amount of ET tokens to be transferred"
+      },
+      "returns": "Transaction receipt confirming the purchase"
+    },
+    "accessAIContent": {
+      "function": "accessAIContent",
+      "description": "Buyers can spend ET tokens to access AI-generated content or services.",
+      "parameters": {
+        "aiAgentId": "Identifier of the AI agent providing the service",
+        "buyerAddress": "Address of the buyer's wallet",
+        "tokenAmount": "Amount of ET tokens to be transferred"
+      },
+      "returns": "Access token or confirmation of service provision"
+    },
+    "exclusiveContent": {
+      "function": "accessExclusiveContent",
+      "description": "ET tokens can be used to access exclusive content available only to token holders.",
+      "parameters": {
+        "contentId": "Identifier of the exclusive content",
+        "buyerAddress": "Address of the buyer's wallet",
+        "tokenAmount": "Amount of ET tokens to be transferred"
+      },
+      "returns": "Access token or confirmation of content access"
+    },
+    "loyaltyRewards": {
+      "function": "claimLoyaltyRewards",
+      "description": "Buyers receive loyalty points as ET tokens for frequent purchases or engagements, which can be claimed through this function.",
+      "parameters": {
+        "buyerAddress": "Address of the buyer's wallet"
+      },
+      "returns": "Number of ET tokens added to the buyer's wallet as loyalty rewards"
+    },
+    "referralRewards": {
+      "function": "claimReferralRewards",
+      "description": "Rewards buyers with ET tokens for successfully referring new users to the Elysium Marketplace.",
+      "parameters": {
+        "referralCode": "Unique code provided to the referrer",
+        "newUserAddress": "Address of the new user's wallet",
+        "buyerAddress": "Address of the buyer's wallet who referred the new user"
+      },
+      "returns": "Number of ET tokens added to the referrer's wallet as referral rewards"
+    }
+  }
+}
+```

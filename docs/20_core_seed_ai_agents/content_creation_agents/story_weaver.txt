@@ -1,0 +1,61 @@
+```python
+import random
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.tag import pos_tag
+from nltk.stem.wordnet import WordNetLemmatizer
+import markovify
+
+# Ensure necessary NLTK data is downloaded
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+nltk.download('wordnet')
+nltk.download('stopwords')
+
+class StoryWeaver:
+    def __init__(self, text_corpus):
+        self.text_corpus = text_corpus
+        self.stop_words = set(stopwords.words('english'))
+        self.lemmatizer = WordNetLemmatizer()
+        self.markov_model = self.create_markov_model()
+
+    def preprocess_text(self, text):
+        # Tokenize the text
+        tokens = word_tokenize(text)
+        # Remove stopwords and punctuation, and lemmatize the tokens
+        cleaned_tokens = [
+            self.lemmatizer.lemmatize(token.lower())
+            for token in tokens
+            if token.isalpha() and token.lower() not in self.stop_words
+        ]
+        return cleaned_tokens
+
+    def create_markov_model(self):
+        # Preprocess the text corpus
+        preprocessed_text = ' '.join(self.preprocess_text(self.text_corpus))
+        # Create a Markov chain model
+        markov_model = markovify.Text(preprocessed_text)
+        return markov_model
+
+    def generate_story(self, start_with=None, max_attempts=100):
+        # Generate a story using the Markov model
+        for _ in range(max_attempts):
+            story = self.markov_model.make_sentence_with_start(beginning=start_with, strict=False)
+            if story:
+                return story
+        return "Unable to generate a story with the given starting phrase."
+
+# Example usage:
+# Load a text corpus (this should be replaced with an actual text corpus)
+text_corpus = "Once upon a time in a land far, far away, there was a kingdom that was known for its vast wealth and beautiful landscapes. The people of the kingdom lived in harmony with nature and each other, celebrating the joys of life every day."
+
+# Initialize the StoryWeaver with the text corpus
+story_weaver = StoryWeaver(text_corpus)
+
+# Generate a story
+generated_story = story_weaver.generate_story(start_with="In the midst of chaos")
+print(generated_story)
+```
+
+This Python code defines a `StoryWeaver` class that uses a Markov chain model to generate stories based on a given text corpus. The class includes methods for preprocessing text, creating the Markov model, and generating a story with an optional starting phrase. The example usage demonstrates initializing the `StoryWeaver` with a sample text corpus and generating a story. Replace `text_corpus` with an actual text corpus for production use.

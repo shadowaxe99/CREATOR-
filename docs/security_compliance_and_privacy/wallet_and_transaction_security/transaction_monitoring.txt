@@ -1,0 +1,56 @@
+```python
+import json
+from datetime import datetime
+import hashlib
+from kafka import KafkaConsumer, KafkaProducer
+
+# Configuration for Kafka (Assuming Kafka is used for real-time data streaming)
+KAFKA_BROKER_URL = 'localhost:9092'
+TRANSACTIONS_TOPIC = 'transactions'
+ALERTS_TOPIC = 'alerts'
+
+# Initialize Kafka consumer and producer
+consumer = KafkaConsumer(
+    TRANSACTIONS_TOPIC,
+    bootstrap_servers=KAFKA_BROKER_URL,
+    value_deserializer=lambda value: json.loads(value),
+)
+producer = KafkaProducer(
+    bootstrap_servers=KAFKA_BROKER_URL,
+    value_serializer=lambda value: json.dumps(value).encode(),
+)
+
+# Function to monitor transactions
+def monitor_transactions():
+    for message in consumer:
+        transaction = message.value
+        if is_suspicious(transaction):
+            alert = {
+                'timestamp': datetime.now().isoformat(),
+                'transaction_id': transaction['transaction_id'],
+                'message': 'Suspicious transaction detected.'
+            }
+            producer.send(ALERTS_TOPIC, value=alert)
+            print(f"Alert sent for transaction ID: {transaction['transaction_id']}")
+
+# Define criteria for a suspicious transaction
+def is_suspicious(transaction):
+    # Example criteria: Large transaction amount and new recipient account
+    LARGE_AMOUNT_THRESHOLD = 10000
+    NEW_ACCOUNT_AGE_DAYS = 30
+    amount = transaction.get('amount', 0)
+    recipient_account_age = (datetime.now() - datetime.fromisoformat(transaction.get('recipient_account_creation_date'))).days
+    return amount > LARGE_AMOUNT_THRESHOLD and recipient_account_age < NEW_ACCOUNT_AGE_DAYS
+
+# Function to generate a unique hash for each transaction (for tracking and auditing purposes)
+def generate_transaction_hash(transaction):
+    transaction_string = json.dumps(transaction, sort_keys=True).encode()
+    return hashlib.sha256(transaction_string).hexdigest()
+
+# Main function to start the transaction monitoring process
+if __name__ == '__main__':
+    print("Starting transaction monitoring service...")
+    monitor_transactions()
+```
+
+This Python script sets up a real-time transaction monitoring service using Kafka for message streaming. It listens for transaction messages, checks for suspicious activity based on predefined criteria, and sends alerts if necessary. It also includes a function to generate a unique hash for each transaction.

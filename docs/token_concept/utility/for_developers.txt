@@ -1,0 +1,101 @@
+```javascript
+// ElysiumTokenDeveloperUtility.js
+
+const { ElysiumToken, TotalETSupply, RewardsPool, StakingRewards } = require('../shared_dependencies');
+
+class ElysiumTokenDeveloperUtility {
+  constructor(developerId) {
+    this.developerId = developerId;
+    this.balance = 0;
+  }
+
+  // Function to receive tokens for listing AI agents and applications
+  receiveTokensForListing(listingPrice) {
+    if (listingPrice <= 0) {
+      throw new Error('Listing price must be greater than zero.');
+    }
+    this.balance += listingPrice;
+    ElysiumToken.transfer(this.developerId, listingPrice);
+  }
+
+  // Function to receive tokens for contributing to the platform's development
+  receiveTokensForContribution(contributionValue) {
+    if (contributionValue <= 0) {
+      throw new Error('Contribution value must be greater than zero.');
+    }
+    this.balance += contributionValue;
+    ElysiumToken.transfer(this.developerId, contributionValue);
+  }
+
+  // Function to stake tokens for platform support
+  stakeTokens(amount) {
+    if (amount <= 0 || amount > this.balance) {
+      throw new Error('Invalid staking amount.');
+    }
+    this.balance -= amount;
+    StakingRewards.stake(this.developerId, amount);
+  }
+
+  // Function to check the developer's balance
+  checkBalance() {
+    return this.balance;
+  }
+}
+
+module.exports = ElysiumTokenDeveloperUtility;
+```
+
+```solidity
+// ElysiumToken.sol
+
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+contract ElysiumToken is ERC20 {
+    address public admin;
+    uint256 public maxTotalSupply;
+
+    constructor() ERC20("Elysium Token", "ET") {
+        admin = msg.sender;
+        maxTotalSupply = TotalETSupply; // TotalETSupply should be defined in a shared config or as a constant
+    }
+
+    function mint(address to, uint256 amount) external {
+        require(msg.sender == admin, "Only admin can mint tokens");
+        require(totalSupply() + amount <= maxTotalSupply, "Max total supply exceeded");
+        _mint(to, amount);
+    }
+
+    function transferFromListingAndContribution(address developer, uint256 amount) external {
+        require(msg.sender == admin, "Only admin can distribute tokens");
+        _mint(developer, amount);
+    }
+}
+```
+
+```solidity
+// StakingRewards.sol
+
+pragma solidity ^0.8.0;
+
+contract StakingRewards {
+    mapping(address => uint256) public stakingBalance;
+    address public admin;
+
+    constructor() {
+        admin = msg.sender;
+    }
+
+    function stake(address developer, uint256 amount) external {
+        require(msg.sender == admin, "Only admin can stake tokens");
+        stakingBalance[developer] += amount;
+    }
+
+    function getStakingBalance(address developer) external view returns (uint256) {
+        return stakingBalance[developer];
+    }
+}
+```
+
+These code snippets provide a JavaScript class for managing developer utilities related to the Elysium Token (ET), including receiving tokens for listing AI agents and contributions, staking tokens, and checking balance. Additionally, Solidity contracts for the Elysium Token and Staking Rewards are provided to handle token minting and staking operations on the blockchain.

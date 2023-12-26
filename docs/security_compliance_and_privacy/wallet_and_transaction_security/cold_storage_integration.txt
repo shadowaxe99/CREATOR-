@@ -1,0 +1,97 @@
+```python
+import os
+import json
+from web3 import Web3
+from eth_account.messages import encode_defunct
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
+
+class ColdStorageService:
+    def __init__(self, web3_provider_uri, private_key_encryption_key):
+        self.web3 = Web3(Web3.HTTPProvider(web3_provider_uri))
+        self.private_key_encryption_key = private_key_encryption_key
+
+    def create_cold_storage_account(self):
+        """
+        Creates a new Ethereum account for cold storage.
+        The private key is encrypted before being saved to a file for security.
+        """
+        account = self.web3.eth.account.create()
+        encrypted_private_key = self.encrypt_private_key(account.privateKey)
+        self.save_encrypted_private_key(account.address, encrypted_private_key)
+        return account.address
+
+    def encrypt_private_key(self, private_key):
+        """
+        Encrypts the private key using AES encryption.
+        """
+        cipher = AES.new(self.private_key_encryption_key, AES.MODE_EAX)
+        nonce = cipher.nonce
+        ciphertext, tag = cipher.encrypt_and_digest(private_key)
+        return json.dumps({'nonce': nonce.hex(), 'ciphertext': ciphertext.hex(), 'tag': tag.hex()})
+
+    def save_encrypted_private_key(self, address, encrypted_private_key):
+        """
+        Saves the encrypted private key to a file named after the wallet address.
+        """
+        with open(f'cold_storage/{address}.json', 'w') as file:
+            file.write(encrypted_private_key)
+
+    def load_encrypted_private_key(self, address):
+        """
+        Loads the encrypted private key from a file.
+        """
+        with open(f'cold_storage/{address}.json', 'r') as file:
+            return json.load(file)
+
+    def decrypt_private_key(self, address):
+        """
+        Decrypts the private key for the given address.
+        """
+        encrypted_data = self.load_encrypted_private_key(address)
+        nonce = bytes.fromhex(encrypted_data['nonce'])
+        ciphertext = bytes.fromhex(encrypted_data['ciphertext'])
+        tag = bytes.fromhex(encrypted_data['tag'])
+        cipher = AES.new(self.private_key_encryption_key, AES.MODE_EAX, nonce=nonce)
+        private_key = cipher.decrypt_and_verify(ciphertext, tag)
+        return private_key
+
+    def sign_transaction(self, address, transaction):
+        """
+        Signs a transaction using the decrypted private key from cold storage.
+        """
+        private_key = self.decrypt_private_key(address)
+        signed_message = self.web3.eth.account.sign_transaction(transaction, private_key)
+        return signed_message.rawTransaction
+
+    def send_transaction(self, address, transaction):
+        """
+        Sends a signed transaction to the Ethereum network.
+        """
+        signed_transaction = self.sign_transaction(address, transaction)
+        return self.web3.eth.send_raw_transaction(signed_transaction)
+
+# Example usage:
+# Initialize the ColdStorageService with a Web3 provider and an encryption key for the private keys
+cold_storage_service = ColdStorageService('https://mainnet.infura.io/v3/YOUR_INFURA_PROJECT_ID', get_random_bytes(16))
+
+# Create a new cold storage account and get its address
+new_cold_storage_address = cold_storage_service.create_cold_storage_account()
+print(f'New cold storage account address: {new_cold_storage_address}')
+
+# Prepare a transaction
+transaction = {
+    'to': '0xRecipientAddress',
+    'value': Web3.toWei(1, 'ether'),
+    'gas': 2000000,
+    'gasPrice': Web3.toWei('50', 'gwei'),
+    'nonce': 0,
+    'chainId': 1
+}
+
+# Sign and send the transaction using the cold storage account
+tx_hash = cold_storage_service.send_transaction(new_cold_storage_address, transaction)
+print(f'Transaction hash: {tx_hash.hex()}')
+```
+
+This code provides a complete implementation of a cold storage service for Ethereum wallets. It includes the creation of a new account, encryption of the private key, saving and loading the encrypted key, decryption, signing transactions, and sending transactions. The example usage demonstrates how to use the service to create a new cold storage account and send a transaction from it.

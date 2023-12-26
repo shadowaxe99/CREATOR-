@@ -1,0 +1,54 @@
+```python
+import random
+import string
+from typing import List
+
+class IdeaIncubator:
+    def __init__(self):
+        self.idea_pool = []
+        self.keywords = set()
+
+    def _generate_idea(self) -> str:
+        """
+        Generate a random creative idea by combining keywords.
+        """
+        if not self.keywords:
+            raise ValueError("Keyword pool is empty. Please add keywords before generating ideas.")
+        
+        idea = ' '.join(random.sample(self.keywords, min(3, len(self.keywords))))
+        return idea.capitalize()
+
+    def add_keywords(self, new_keywords: List[str]):
+        """
+        Add new keywords to the pool for idea generation.
+        """
+        self.keywords.update(new_keywords)
+
+    def generate_ideas(self, count: int = 10) -> List[str]:
+        """
+        Generate a list of creative ideas.
+        """
+        return [self._generate_idea() for _ in range(count)]
+
+    def refine_idea(self, idea: str, additional_keywords: List[str]) -> str:
+        """
+        Refine an idea by adding additional keywords to it.
+        """
+        refined_idea = idea + ' ' + ' '.join(additional_keywords)
+        return refined_idea.strip().capitalize()
+
+# Example usage:
+idea_incubator = IdeaIncubator()
+idea_incubator.add_keywords(['futuristic', 'sustainable', 'architecture', 'design', 'eco-friendly'])
+ideas = idea_incubator.generate_ideas()
+refined_idea = idea_incubator.refine_idea(ideas[0], ['modular', 'urban'])
+
+print("Generated Ideas:")
+for idea in ideas:
+    print(idea)
+
+print("\nRefined Idea:")
+print(refined_idea)
+```
+
+This code defines a class `IdeaIncubator` that can generate and refine creative ideas based on a pool of keywords. It includes methods to add new keywords, generate a list of ideas, and refine an existing idea with additional keywords. The example usage demonstrates how to create an instance of `IdeaIncubator`, add keywords, generate ideas, and refine one of the generated ideas.

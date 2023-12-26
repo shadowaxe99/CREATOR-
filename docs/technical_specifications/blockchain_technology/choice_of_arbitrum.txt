@@ -1,0 +1,55 @@
+```python
+# ArbitrumBlockchain.py
+
+from web3 import Web3
+from solcx import compile_source
+from web3.middleware import geth_poa_middleware
+
+class ArbitrumBlockchain:
+    def __init__(self, provider_url, private_key):
+        self.w3 = Web3(Web3.HTTPProvider(provider_url))
+        self.w3.middleware_onion.inject(geth_poa_middleware, layer=0)
+        self.account = self.w3.eth.account.privateKeyToAccount(private_key)
+        self.w3.eth.default_account = self.account.address
+
+    def deploy_contract(self, contract_source_code, constructor_arguments=()):
+        compiled_sol = compile_source(contract_source_code)
+        contract_id, contract_interface = compiled_sol.popitem()
+        bytecode = contract_interface['bin']
+        abi = contract_interface['abi']
+        contract = self.w3.eth.contract(abi=abi, bytecode=bytecode)
+        tx_hash = contract.constructor(*constructor_arguments).transact({'from': self.account.address})
+        tx_receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+        deployed_contract = self.w3.eth.contract(
+            address=tx_receipt.contractAddress,
+            abi=abi
+        )
+        return deployed_contract
+
+    def interact_with_contract(self, contract_address, abi, function_name, arguments=(), value=0):
+        contract = self.w3.eth.contract(address=contract_address, abi=abi)
+        tx_hash = contract.functions[function_name](*arguments).transact({'from': self.account.address, 'value': value})
+        tx_receipt = self.w3.eth.waitForTransactionReceipt(tx_hash)
+        return tx_receipt
+
+# Example usage:
+# arb_provider_url = 'https://arbitrum-rinkeby.infura.io/v3/YOUR_INFURA_PROJECT_ID'
+# arb_private_key = 'YOUR_PRIVATE_KEY'
+# arbitrum_blockchain = ArbitrumBlockchain(arb_provider_url, arb_private_key)
+
+# Deploy a contract
+# contract_source_code = '''
+# pragma solidity ^0.8.0;
+# contract MyContract {
+#     // Contract code here
+# }
+# '''
+# my_contract = arbitrum_blockchain.deploy_contract(contract_source_code)
+
+# Interact with a contract
+# my_contract_address = '0xContractAddress'
+# my_contract_abi = [...]  # Contract ABI
+# receipt = arbitrum_blockchain.interact_with_contract(my_contract_address, my_contract_abi, 'myFunction', (arg1, arg2))
+```
+
+This Python code provides a class `ArbitrumBlockchain` that allows deploying and interacting with smart contracts on the Arbitrum network. It uses the `web3.py` library to communicate with the blockchain and the `solcx` library to compile Solidity source code. The example usage shows how to deploy a contract and interact with it using the provided methods.

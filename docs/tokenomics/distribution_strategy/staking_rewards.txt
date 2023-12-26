@@ -1,0 +1,95 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+contract StakingRewards is Ownable, ReentrancyGuard {
+    IERC20 public immutable elysiumToken;
+    uint256 public rewardRate;
+    uint256 public lastUpdateTime;
+    uint256 public rewardPerTokenStored;
+    uint256 public totalSupply;
+    mapping(address => uint256) public userRewardPerTokenPaid;
+    mapping(address => uint256) public rewards;
+
+    struct Staker {
+        uint256 balance;
+        uint256 rewardsEarned;
+        uint256 rewardsReleased;
+    }
+
+    mapping(address => Staker) public stakers;
+
+    event Staked(address indexed user, uint256 amount);
+    event Withdrawn(address indexed user, uint256 amount);
+    event RewardPaid(address indexed user, uint256 reward);
+
+    constructor(address _elysiumToken, uint256 _rewardRate) {
+        elysiumToken = IERC20(_elysiumToken);
+        rewardRate = _rewardRate;
+    }
+
+    modifier updateReward(address account) {
+        rewardPerTokenStored = rewardPerToken();
+        lastUpdateTime = block.timestamp;
+        if (account != address(0)) {
+            rewards[account] = earned(account);
+            userRewardPerTokenPaid[account] = rewardPerTokenStored;
+        }
+        _;
+    }
+
+    function rewardPerToken() public view returns (uint256) {
+        if (totalSupply == 0) {
+            return rewardPerTokenStored;
+        }
+        return
+            rewardPerTokenStored +
+            (((block.timestamp - lastUpdateTime) * rewardRate * 1e18) / totalSupply);
+    }
+
+    function earned(address account) public view returns (uint256) {
+        return
+            ((stakers[account].balance * (rewardPerToken() - userRewardPerTokenPaid[account])) / 1e18) +
+            rewards[account];
+    }
+
+    function stake(uint256 _amount) external nonReentrant updateReward(msg.sender) {
+        require(_amount > 0, "Cannot stake 0");
+        totalSupply += _amount;
+        stakers[msg.sender].balance += _amount;
+        elysiumToken.transferFrom(msg.sender, address(this), _amount);
+        emit Staked(msg.sender, _amount);
+    }
+
+    function withdraw(uint256 _amount) public nonReentrant updateReward(msg.sender) {
+        require(_amount > 0, "Cannot withdraw 0");
+        totalSupply -= _amount;
+        stakers[msg.sender].balance -= _amount;
+        elysiumToken.transfer(msg.sender, _amount);
+        emit Withdrawn(msg.sender, _amount);
+    }
+
+    function getReward() public nonReentrant updateReward(msg.sender) {
+        uint256 reward = rewards[msg.sender];
+        if (reward > 0) {
+            rewards[msg.sender] = 0;
+            stakers[msg.sender].rewardsEarned += reward;
+            elysiumToken.transfer(msg.sender, reward);
+            emit RewardPaid(msg.sender, reward);
+        }
+    }
+
+    function setRewardRate(uint256 _rewardRate) external onlyOwner {
+        rewardRate = _rewardRate;
+    }
+
+    function exit() external {
+        withdraw(stakers[msg.sender].balance);
+        getReward();
+    }
+}
+```

@@ -1,0 +1,71 @@
+```python
+import random
+from datetime import datetime, timedelta
+
+class WellnessWatcher:
+    def __init__(self, user_id):
+        self.user_id = user_id
+        self.stress_level = 0
+        self.last_interaction = datetime.now()
+        self.wellness_resources = {
+            'meditation': 'meditation_resources.txt',
+            'exercise': 'exercise_resources.txt',
+            'nutrition': 'nutrition_resources.txt',
+            'sleep': 'sleep_resources.txt',
+            'time_management': 'time_management_resources.txt'
+        }
+
+    def update_stress_level(self, stress_factor):
+        self.stress_level += stress_factor
+        self.stress_level = min(max(self.stress_level, 0), 100)  # Ensure stress level is between 0 and 100
+
+    def get_wellness_resources(self, category):
+        try:
+            with open(self.wellness_resources[category], 'r') as file:
+                resources = file.read()
+                return resources
+        except KeyError:
+            return "Category not found."
+        except FileNotFoundError:
+            return "Resource file not found."
+
+    def recommend_activity(self):
+        current_time = datetime.now()
+        if current_time - self.last_interaction > timedelta(hours=1):
+            self.last_interaction = current_time
+            if self.stress_level > 70:
+                return self.get_wellness_resources('meditation')
+            elif self.stress_level > 50:
+                return self.get_wellness_resources('exercise')
+            elif self.stress_level > 30:
+                return self.get_wellness_resources('nutrition')
+            else:
+                return self.get_wellness_resources('sleep')
+        else:
+            return "You've interacted recently. Take some time to relax."
+
+    def log_wellness_session(self, activity_type):
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        log_entry = f"{timestamp} - User {self.user_id} completed a {activity_type} session.\n"
+        with open('wellness_session_log.txt', 'a') as log_file:
+            log_file.write(log_entry)
+
+    def schedule_time_management_session(self):
+        return self.get_wellness_resources('time_management')
+
+    def perform_random_check_in(self):
+        activities = list(self.wellness_resources.keys())
+        random_activity = random.choice(activities)
+        return self.get_wellness_resources(random_activity)
+
+# Example usage:
+# watcher = WellnessWatcher(user_id=12345)
+# watcher.update_stress_level(20)
+# resources = watcher.recommend_activity()
+# print(resources)
+# watcher.log_wellness_session(activity_type='meditation')
+# time_management = watcher.schedule_time_management_session()
+# print(time_management)
+# random_check_in = watcher.perform_random_check_in()
+# print(random_check_in)
+```

@@ -1,0 +1,48 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
+
+/**
+ * @title ElysiumToken
+ * @dev Implementation of the Elysium Token (ET)
+ * An ERC-20 token designed for the Elysium Marketplace to incentivize and reward creators, consumers, and developers.
+ */
+contract ElysiumToken is ERC20 {
+    // Total supply of Elysium Tokens
+    uint256 private constant _totalSupply = 1_000_000_000 * (10 ** uint256(decimals()));
+
+    // Address of the platform owner or governance contract
+    address public platformOwner;
+
+    /**
+     * @dev Sets the values for {name}, {symbol}, and {totalSupply}.
+     * All tokens are initially allocated to the deployer of the contract.
+     */
+    constructor(address owner) ERC20("Elysium Token", "ET") {
+        require(owner != address(0), "ElysiumToken: owner is the zero address");
+        platformOwner = owner;
+        _mint(owner, _totalSupply);
+    }
+
+    /**
+     * @dev Function to transfer ownership of the ElysiumToken contract.
+     * Can only be called by the current owner.
+     * @param newOwner The address to transfer ownership to.
+     */
+    function transferOwnership(address newOwner) public {
+        require(msg.sender == platformOwner, "ElysiumToken: caller is not the owner");
+        require(newOwner != address(0), "ElysiumToken: new owner is the zero address");
+        platformOwner = newOwner;
+    }
+
+    /**
+     * @dev Function to get the total supply of Elysium Tokens.
+     * @return uint256 representing the total amount of tokens.
+     */
+    function getTotalSupply() public pure returns (uint256) {
+        return _totalSupply;
+    }
+}
+```

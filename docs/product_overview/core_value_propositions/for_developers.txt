@@ -1,0 +1,79 @@
+// Elysium Marketplace - Core Value Propositions for Developers
+// File: docs/product_overview/core_value_propositions/for_developers.txt
+
+const ElysiumMarketplaceDeveloperValueProps = {
+  deployAndMonetizeAI: function() {
+    // Function to allow developers to deploy AI agents to the marketplace
+    const deploymentStatus = AIIntegrationAPI.deployAgent(this.agentData);
+    if (deploymentStatus.success) {
+      TokenSchema.incrementBalance(this.developerId, deploymentStatus.reward);
+    }
+    return deploymentStatus;
+  },
+  contributeToPlatformDevelopment: function(contribution) {
+    // Function for developers to contribute to the platform's development
+    const contributionStatus = PlatformDevelopmentAPI.submitContribution(contribution);
+    if (contributionStatus.accepted) {
+      TokenSchema.incrementBalance(this.developerId, contributionStatus.bounty);
+    }
+    return contributionStatus;
+  },
+  accessToAIIntegrationAPIs: function() {
+    // Function to provide developers with access to AI integration APIs
+    return AIIntegrationAPI.getAvailableAPIs();
+  },
+  receiveRewardsForContributions: function() {
+    // Function to reward developers for their contributions to the platform
+    const rewards = RewardsPool.getRewardsForDeveloper(this.developerId);
+    TokenSchema.incrementBalance(this.developerId, rewards.total);
+    return rewards;
+  },
+  participateInGovernance: function(vote) {
+    // Function to allow developers to participate in platform governance
+    GovernanceVotes.recordVote(this.developerId, vote);
+  }
+};
+
+class Developer {
+  constructor(developerId, agentData) {
+    this.developerId = developerId;
+    this.agentData = agentData;
+  }
+
+  // Wrapper functions for value proposition methods
+  deployAI() {
+    return ElysiumMarketplaceDeveloperValueProps.deployAndMonetizeAI.call(this);
+  }
+
+  contribute(contribution) {
+    return ElysiumMarketplaceDeveloperValueProps.contributeToPlatformDevelopment.call(this, contribution);
+  }
+
+  getAPIs() {
+    return ElysiumMarketplaceDeveloperValueProps.accessToAIIntegrationAPIs.call(this);
+  }
+
+  getRewards() {
+    return ElysiumMarketplaceDeveloperValueProps.receiveRewardsForContributions.call(this);
+  }
+
+  voteOnGovernance(vote) {
+    return ElysiumMarketplaceDeveloperValueProps.participateInGovernance.call(this, vote);
+  }
+}
+
+// Example usage
+const developerJohn = new Developer('dev123', { name: 'AI Artisan', description: 'Generates digital art' });
+const deployment = developerJohn.deployAI();
+const contribution = developerJohn.contribute({ feature: 'New AI analytics tool' });
+const apis = developerJohn.getAPIs();
+const rewards = developerJohn.getRewards();
+developerJohn.voteOnGovernance({ proposalId: 'prop456', vote: 'yes' });
+
+// Note: The above code assumes the existence of the following:
+// - AIIntegrationAPI with methods deployAgent() and getAvailableAPIs()
+// - PlatformDevelopmentAPI with method submitContribution()
+// - TokenSchema with method incrementBalance()
+// - RewardsPool with method getRewardsForDeveloper()
+// - GovernanceVotes with method recordVote()
+// These would be part of the shared dependencies and other files we are generating.
