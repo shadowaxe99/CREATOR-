@@ -1,0 +1,104 @@
+```python
+# Import necessary libraries and dependencies
+from flask import Flask, jsonify, request
+from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import Column, Integer, String, Float, ForeignKey
+from sqlalchemy.orm import relationship
+import os
+
+# Initialize Flask application
+app = Flask(__name__)
+
+# Database configuration
+app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///elysium_marketplace.db')
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+
+# Define AI Agent model
+class AIAgent(db.Model):
+    __tablename__ = 'ai_agents'
+    id = Column(Integer, primary_key=True)
+    name = Column(String, nullable=False)
+    category = Column(String, nullable=False)
+    description = Column(String, nullable=True)
+    creator_id = Column(Integer, ForeignKey('users.id'))
+    creator = relationship('User', back_populates='ai_agents')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'category': self.category,
+            'description': self.description,
+            'creator_id': self.creator_id
+        }
+
+# Define User model
+class User(db.Model):
+    __tablename__ = 'users'
+    id = Column(Integer, primary_key=True)
+    username = Column(String, unique=True, nullable=False)
+    email = Column(String, unique=True, nullable=False)
+    ai_agents = relationship('AIAgent', back_populates='creator')
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'username': self.username,
+            'email': self.email
+        }
+
+# Create all tables
+db.create_all()
+
+# Route to get all AI Agents
+@app.route('/ai_agents', methods=['GET'])
+def get_ai_agents():
+    ai_agents = AIAgent.query.all()
+    return jsonify([agent.to_dict() for agent in ai_agents]), 200
+
+# Route to create a new AI Agent
+@app.route('/ai_agents', methods=['POST'])
+def create_ai_agent():
+    data = request.get_json()
+    new_agent = AIAgent(
+        name=data['name'],
+        category=data['category'],
+        description=data['description'],
+        creator_id=data['creator_id']
+    )
+    db.session.add(new_agent)
+    db.session.commit()
+    return jsonify(new_agent.to_dict()), 201
+
+# Route to get a specific AI Agent by ID
+@app.route('/ai_agents/<int:agent_id>', methods=['GET'])
+def get_ai_agent(agent_id):
+    agent = AIAgent.query.get_or_404(agent_id)
+    return jsonify(agent.to_dict()), 200
+
+# Route to update an AI Agent
+@app.route('/ai_agents/<int:agent_id>', methods=['PUT'])
+def update_ai_agent(agent_id):
+    agent = AIAgent.query.get_or_404(agent_id)
+    data = request.get_json()
+    agent.name = data.get('name', agent.name)
+    agent.category = data.get('category', agent.category)
+    agent.description = data.get('description', agent.description)
+    db.session.commit()
+    return jsonify(agent.to_dict()), 200
+
+# Route to delete an AI Agent
+@app.route('/ai_agents/<int:agent_id>', methods=['DELETE'])
+def delete_ai_agent(agent_id):
+    agent = AIAgent.query.get_or_404(agent_id)
+    db.session.delete(agent)
+    db.session.commit()
+    return jsonify({'message': 'AI Agent deleted successfully'}), 200
+
+# Run the Flask application
+if __name__ == '__main__':
+    app.run(debug=True)
+```
+
+This code provides a Flask application with a SQLite database (or another database specified by the `DATABASE_URL` environment variable) for managing AI agents in the Elysium Marketplace. It includes models for AI agents and users, routes for CRUD operations on AI agents, and database initialization. The AI agents are categorized and can be created, read, updated, and deleted through the API endpoints.

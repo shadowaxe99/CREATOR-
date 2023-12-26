@@ -1,0 +1,54 @@
+```python
+import os
+import json
+from ai_art_generator import AIArtGenerator
+
+class AIArtisan2_0:
+    def __init__(self, model_path, user_preferences=None):
+        self.model_path = model_path
+        self.user_preferences = user_preferences or {}
+        self.art_generator = AIArtGenerator(model_path)
+
+    def create_art(self, prompt, style=None, iterations=1):
+        style = style or self.user_preferences.get('default_style', 'abstract')
+        generated_art_paths = []
+        for _ in range(iterations):
+            art_path = self.art_generator.generate_art(prompt, style)
+            generated_art_paths.append(art_path)
+        return generated_art_paths
+
+    def save_preferences(self, preferences):
+        self.user_preferences.update(preferences)
+        preferences_path = os.path.join(self.model_path, 'user_preferences.json')
+        with open(preferences_path, 'w') as pref_file:
+            json.dump(self.user_preferences, pref_file)
+
+    def load_preferences(self):
+        preferences_path = os.path.join(self.model_path, 'user_preferences.json')
+        if os.path.exists(preferences_path):
+            with open(preferences_path, 'r') as pref_file:
+                self.user_preferences = json.load(pref_file)
+
+    def interactive_session(self, prompt):
+        print("Welcome to the interactive art session with AI Artisan 2.0!")
+        while True:
+            user_input = input(f"Enter your art prompt or 'exit' to end the session: ")
+            if user_input.lower() == 'exit':
+                break
+            style = input("Enter the desired art style or leave blank for default: ")
+            iterations = int(input("Enter the number of art iterations to generate: "))
+            art_paths = self.create_art(user_input, style, iterations)
+            for path in art_paths:
+                print(f"Generated art: {path}")
+
+# Example usage
+if __name__ == "__main__":
+    model_directory = 'path_to_model_directory'
+    ai_artisan = AIArtisan2_0(model_directory)
+    ai_artisan.load_preferences()
+    # Set user preferences if needed
+    # ai_artisan.save_preferences({'default_style': 'surrealism'})
+    ai_artisan.interactive_session("A serene landscape")
+```
+
+This code defines a class `AIArtisan2_0` that encapsulates the functionality of an advanced AI art generator. It can generate art based on prompts and styles, save and load user preferences, and conduct an interactive art creation session. The `AIArtGenerator` class is assumed to be a separate module that handles the actual AI model interactions for generating art. The example usage at the bottom demonstrates how to instantiate the class, load preferences, and start an interactive session. The `model_directory` should be replaced with the actual path to the model directory when used in production.

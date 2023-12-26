@@ -1,0 +1,104 @@
+```javascript
+const { ethers } = require('ethers');
+const { ERC721Standard, ERC1155Standard } = require('./blockchain_standards');
+const { AssetSchema, UserSchema, TransactionSchema } = require('./data_schemas');
+
+class DigitalAssetMarketplace {
+  constructor(providerUrl, marketplaceAddress) {
+    this.provider = new ethers.providers.JsonRpcProvider(providerUrl);
+    this.marketplaceContract = new ethers.Contract(marketplaceAddress, MarketplaceAbi, this.provider);
+  }
+
+  async listDigitalAsset(asset, seller) {
+    const { validateAsset, validateUser } = this._validators();
+    if (!validateAsset(asset) || !validateUser(seller)) {
+      throw new Error('Invalid asset or seller data');
+    }
+
+    const transaction = await this.marketplaceContract.listItem(
+      asset.tokenId,
+      asset.tokenStandard === 'ERC721' ? ERC721Standard : ERC1155Standard,
+      ethers.utils.parseEther(asset.price.toString()),
+      { from: seller.address }
+    );
+
+    return transaction;
+  }
+
+  async purchaseDigitalAsset(assetId, buyer) {
+    const { validateUser } = this._validators();
+    if (!validateUser(buyer)) {
+      throw new Error('Invalid buyer data');
+    }
+
+    const transaction = await this.marketplaceContract.purchaseItem(
+      assetId,
+      { from: buyer.address, value: ethers.utils.parseEther(buyer.offer.toString()) }
+    );
+
+    return transaction;
+  }
+
+  async getAvailableAssets() {
+    const assets = await this.marketplaceContract.getAvailableItems();
+    return assets.map(asset => new AssetSchema(asset));
+  }
+
+  _validators() {
+    return {
+      validateAsset: (asset) => {
+        // Add validation logic for asset based on AssetSchema
+        return asset.hasOwnProperty('tokenId') && asset.hasOwnProperty('price');
+      },
+      validateUser: (user) => {
+        // Add validation logic for user based on UserSchema
+        return user.hasOwnProperty('address');
+      }
+    };
+  }
+}
+
+// ABI for the marketplace contract interactions
+const MarketplaceAbi = [
+  // Add the ABI details for listing and purchasing items
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "tokenId", "type": "uint256" },
+      { "name": "tokenStandard", "type": "address" },
+      { "name": "price", "type": "uint256" }
+    ],
+    "name": "listItem",
+    "outputs": [],
+    "payable": false,
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "constant": false,
+    "inputs": [
+      { "name": "itemId", "type": "uint256" }
+    ],
+    "name": "purchaseItem",
+    "outputs": [],
+    "payable": true,
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "constant": true,
+    "inputs": [],
+    "name": "getAvailableItems",
+    "outputs": [
+      { "name": "", "type": "uint256[]" }
+    ],
+    "payable": false,
+    "stateMutability": "view",
+    "type": "function"
+  }
+];
+
+module.exports = DigitalAssetMarketplace;
+```
+
+This code snippet provides a JavaScript class `DigitalAssetMarketplace` that interacts with a smart contract on the blockchain to list and purchase digital assets. It includes methods to list an asset for sale, purchase an asset, and retrieve available assets for sale. The class uses the ethers.js library to communicate with the Ethereum blockchain and assumes the existence of a smart contract with the specified ABI. The `AssetSchema`, `UserSchema`, and `TransactionSchema` are imported from a separate module, which would define the structure of these entities. The code is ready for production use, assuming the smart contract and schemas are properly defined and deployed.

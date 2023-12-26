@@ -1,0 +1,83 @@
+```solidity
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract ElysiumTokenDistribution is Ownable {
+    IERC20 public elysiumToken;
+    uint256 public constant TOTAL_SUPPLY = 1e9 * 1e18; // 1 billion ET with 18 decimals
+
+    // Define allocation percentages (in basis points, where 10000 bp = 100%)
+    uint256 public constant EARLY_ADOPTERS_BP = 1500; // 15%
+    uint256 public constant DEVELOPERS_BP = 1000; // 10%
+    uint256 public constant STRATEGIC_PARTNERS_BP = 500; // 5%
+    uint256 public constant REWARDS_POOL_BP = 2000; // 20%
+    uint256 public constant STAKING_REWARDS_BP = 1500; // 15%
+    uint256 public constant COMPANY_RESERVE_BP = 3500; // 35%
+
+    // Define allocation amounts
+    uint256 public earlyAdoptersAllocation;
+    uint256 public developersAllocation;
+    uint256 public strategicPartnersAllocation;
+    uint256 public rewardsPoolAllocation;
+    uint256 public stakingRewardsAllocation;
+    uint256 public companyReserveAllocation;
+
+    // Track allocated tokens
+    mapping(address => uint256) public allocations;
+
+    // Events
+    event TokensAllocated(address indexed beneficiary, uint256 amount);
+
+    constructor(address _elysiumTokenAddress) {
+        require(_elysiumTokenAddress != address(0), "ElysiumToken address cannot be zero");
+        elysiumToken = IERC20(_elysiumTokenAddress);
+
+        // Calculate allocations
+        earlyAdoptersAllocation = (TOTAL_SUPPLY * EARLY_ADOPTERS_BP) / 10000;
+        developersAllocation = (TOTAL_SUPPLY * DEVELOPERS_BP) / 10000;
+        strategicPartnersAllocation = (TOTAL_SUPPLY * STRATEGIC_PARTNERS_BP) / 10000;
+        rewardsPoolAllocation = (TOTAL_SUPPLY * REWARDS_POOL_BP) / 10000;
+        stakingRewardsAllocation = (TOTAL_SUPPLY * STAKING_REWARDS_BP) / 10000;
+        companyReserveAllocation = (TOTAL_SUPPLY * COMPANY_RESERVE_BP) / 10000;
+    }
+
+    function allocateEarlyAdopters(address[] calldata beneficiaries, uint256[] calldata amounts) external onlyOwner {
+        require(beneficiaries.length == amounts.length, "Beneficiaries and amounts length mismatch");
+        for (uint256 i = 0; i < beneficiaries.length; i++) {
+            require(allocations[beneficiaries[i]] == 0, "Beneficiary already allocated");
+            require(amounts[i] <= earlyAdoptersAllocation, "Amount exceeds allocation");
+            allocations[beneficiaries[i]] = amounts[i];
+            earlyAdoptersAllocation -= amounts[i];
+            emit TokensAllocated(beneficiaries[i], amounts[i]);
+        }
+    }
+
+    function allocateDevelopers(address[] calldata beneficiaries, uint256[] calldata amounts) external onlyOwner {
+        // Similar implementation as allocateEarlyAdopters
+    }
+
+    function allocateStrategicPartners(address[] calldata beneficiaries, uint256[] calldata amounts) external onlyOwner {
+        // Similar implementation as allocateEarlyAdopters
+    }
+
+    function allocateRewardsPool(address rewardsContract, uint256 amount) external onlyOwner {
+        require(amount <= rewardsPoolAllocation, "Amount exceeds allocation");
+        rewardsPoolAllocation -= amount;
+        elysiumToken.transfer(rewardsContract, amount);
+        emit TokensAllocated(rewardsContract, amount);
+    }
+
+    function allocateStakingRewards(address stakingContract, uint256 amount) external onlyOwner {
+        // Similar implementation as allocateRewardsPool
+    }
+
+    function allocateCompanyReserve(address reserveWallet, uint256 amount) external onlyOwner {
+        // Similar implementation as allocateRewardsPool
+    }
+
+    // Additional functions to handle token distribution can be added here
+}
+```

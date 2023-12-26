@@ -1,0 +1,7 @@
+const ElysiumToken = {
+  name: "Elysium Token",
+  symbol: "ET",
+  description: "The native utility token of Elysium Marketplace used to incentivize and reward creators, consumers, and developers."
+};
+
+module.exports = ElysiumToken;

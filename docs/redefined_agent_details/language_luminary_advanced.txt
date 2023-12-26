@@ -1,0 +1,38 @@
+```python
+import json
+from transformers import MarianMTModel, MarianTokenizer
+
+class LanguageLuminaryAdvanced:
+    def __init__(self, model_name='Helsinki-NLP/opus-mt-en-ROMANCE'):
+        self.tokenizer = MarianTokenizer.from_pretrained(model_name)
+        self.model = MarianMTModel.from_pretrained(model_name)
+        self.supported_languages = self._get_supported_languages()
+
+    def _get_supported_languages(self):
+        # This method should be updated based on the actual supported languages of the model
+        return ['fr', 'es', 'it', 'pt', 'ro']
+
+    def translate(self, text, target_language):
+        if target_language not in self.supported_languages:
+            raise ValueError(f"Target language {target_language} is not supported.")
+        translated = self.model.generate(**self.tokenizer(text, return_tensors="pt", padding=True))
+        return self.tokenizer.decode(translated[0], skip_special_tokens=True)
+
+    def save_translation(self, text, target_language, file_path):
+        translation = self.translate(text, target_language)
+        with open(file_path, 'w', encoding='utf-8') as file:
+            json.dump({'source_text': text, 'translated_text': translation}, file, ensure_ascii=False, indent=4)
+
+    def load_translation(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            return json.load(file)
+
+# Example usage:
+# luminary = LanguageLuminaryAdvanced()
+# translation = luminary.translate("Hello, world!", "es")
+# luminary.save_translation("Hello, world!", "es", "translations/hello_world_es.json")
+# loaded_translation = luminary.load_translation("translations/hello_world_es.json")
+# print(loaded_translation)
+```
+
+This code defines a class `LanguageLuminaryAdvanced` that uses the Marian NLP model for translation. It includes methods to translate text, save the translation to a file, and load a translation from a file. The example usage demonstrates how to create an instance of the class, translate text, save the translation, and then load it. The actual supported languages should be updated based on the model's capabilities.

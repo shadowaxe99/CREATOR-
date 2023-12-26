@@ -1,0 +1,88 @@
+```python
+import random
+from datetime import datetime, timedelta
+from wellness_resources import WellnessResourceSchema
+from ai_agent_base import AIAgentBase
+
+class WellnessWatcherEnhanced(AIAgentBase):
+    def __init__(self, user_id):
+        super().__init__(user_id)
+        self.user_id = user_id
+        self.wellness_resources = WellnessResourceSchema.load_resources()
+
+    def provide_stress_management_tips(self):
+        stress_tips = self.wellness_resources.get('stress_management')
+        selected_tip = random.choice(stress_tips)
+        return selected_tip
+
+    def suggest_creative_break_activities(self):
+        creative_breaks = self.wellness_resources.get('creative_breaks')
+        selected_activity = random.choice(creative_breaks)
+        return selected_activity
+
+    def track_user_mood(self, mood):
+        current_time = datetime.now()
+        self.user_data['mood_logs'].append({
+            'timestamp': current_time,
+            'mood': mood
+        })
+        return "Mood logged successfully."
+
+    def analyze_mood_trends(self):
+        mood_logs = self.user_data.get('mood_logs', [])
+        mood_trends = {}
+        for log in mood_logs:
+            mood_trends.setdefault(log['mood'], []).append(log['timestamp'])
+        return mood_trends
+
+    def recommend_personalized_wellness_actions(self):
+        mood_trends = self.analyze_mood_trends()
+        if not mood_trends:
+            return "No mood data available for analysis."
+
+        most_common_mood = max(mood_trends, key=lambda mood: len(mood_trends[mood]))
+        if most_common_mood in ['stressed', 'anxious']:
+            return self.provide_stress_management_tips()
+        elif most_common_mood in ['happy', 'content']:
+            return "Keep up the good work! Remember to take regular breaks."
+        else:
+            return "Consider speaking to a professional for personalized advice."
+
+    def schedule_wellness_sessions(self, frequency='weekly'):
+        current_time = datetime.now()
+        if frequency == 'weekly':
+            next_session = current_time + timedelta(weeks=1)
+        elif frequency == 'daily':
+            next_session = current_time + timedelta(days=1)
+        else:
+            raise ValueError("Invalid frequency. Choose 'daily' or 'weekly'.")
+
+        self.user_data['scheduled_sessions'].append({
+            'session_time': next_session,
+            'session_type': 'wellness'
+        })
+        return f"Next wellness session scheduled for {next_session}."
+
+    def perform_wellness_check_in(self):
+        check_in_questions = self.wellness_resources.get('check_in_questions')
+        responses = {}
+        for question in check_in_questions:
+            response = input(question + " ")
+            responses[question] = response
+        self.user_data['check_ins'].append({
+            'timestamp': datetime.now(),
+            'responses': responses
+        })
+        return "Wellness check-in completed."
+
+# Example usage:
+# user_wellness_agent = WellnessWatcherEnhanced(user_id='12345')
+# print(user_wellness_agent.provide_stress_management_tips())
+# print(user_wellness_agent.suggest_creative_break_activities())
+# print(user_wellness_agent.track_user_mood('happy'))
+# print(user_wellness_agent.recommend_personalized_wellness_actions())
+# print(user_wellness_agent.schedule_wellness_sessions())
+# print(user_wellness_agent.perform_wellness_check_in())
+```
+
+This code defines a class `WellnessWatcherEnhanced` that inherits from a base AI agent class and provides methods for managing wellness-related features such as stress management tips, creative break suggestions, mood tracking, mood trend analysis, personalized wellness action recommendations, wellness session scheduling, and performing wellness check-ins. The example usage at the bottom demonstrates how to instantiate the class and call its methods.

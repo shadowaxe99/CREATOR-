@@ -1,0 +1,85 @@
+```python
+import json
+from typing import List, Dict, Any
+from collaborative_storytelling import CollaborativeStorytellingEngine
+
+class StoryWeaverPro:
+    def __init__(self, model_path: str):
+        self.engine = CollaborativeStorytellingEngine(model_path)
+
+    def create_story(self, initial_prompt: str, user_ids: List[str]) -> str:
+        return self.engine.generate_collaborative_story(initial_prompt, user_ids)
+
+    def continue_story(self, story_id: str, next_part: str, user_id: str) -> str:
+        return self.engine.continue_story(story_id, next_part, user_id)
+
+    def get_story(self, story_id: str) -> Dict[str, Any]:
+        return self.engine.get_story_details(story_id)
+
+    def save_story(self, story_id: str) -> None:
+        story_details = self.get_story(story_id)
+        with open(f'stories/{story_id}.json', 'w') as story_file:
+            json.dump(story_details, story_file, indent=4)
+
+    def load_story(self, story_id: str) -> Dict[str, Any]:
+        with open(f'stories/{story_id}.json', 'r') as story_file:
+            return json.load(story_file)
+
+# Collaborative storytelling engine implementation
+class CollaborativeStorytellingEngine:
+    def __init__(self, model_path: str):
+        # Load the AI model for story generation
+        self.model = self._load_model(model_path)
+        self.stories = {}  # Stores ongoing stories
+
+    def _load_model(self, model_path: str):
+        # Placeholder for model loading logic
+        # In a real-world scenario, this would load a pre-trained AI model
+        return "Loaded AI Model"
+
+    def generate_collaborative_story(self, initial_prompt: str, user_ids: List[str]) -> str:
+        story_id = self._generate_story_id()
+        self.stories[story_id] = {
+            "prompt": initial_prompt,
+            "parts": [],
+            "users": user_ids,
+            "current_user_index": 0
+        }
+        # Generate the first part of the story
+        first_part = self.model.generate(initial_prompt)
+        self.stories[story_id]["parts"].append(first_part)
+        return story_id
+
+    def continue_story(self, story_id: str, next_part: str, user_id: str) -> str:
+        story = self.stories.get(story_id)
+        if not story or user_id not in story["users"]:
+            raise ValueError("Invalid story ID or user ID")
+
+        # Check if it's the user's turn
+        current_user_index = story["current_user_index"]
+        if story["users"][current_user_index] != user_id:
+            raise PermissionError("It's not the user's turn")
+
+        story["parts"].append(next_part)
+        story["current_user_index"] = (current_user_index + 1) % len(story["users"])
+        return story_id
+
+    def get_story_details(self, story_id: str) -> Dict[str, Any]:
+        return self.stories.get(story_id, {})
+
+    def _generate_story_id(self) -> str:
+        # Placeholder for story ID generation logic
+        # In a real-world scenario, this would generate a unique identifier
+        return "UniqueStoryID"
+
+# Example usage
+if __name__ == "__main__":
+    story_weaver = StoryWeaverPro(model_path="path/to/story/model")
+    story_id = story_weaver.create_story("Once upon a time in a land far, far away...", ["user1", "user2", "user3"])
+    story_weaver.continue_story(story_id, "There lived a wise old owl...", "user1")
+    story_details = story_weaver.get_story(story_id)
+    print(story_details)
+    story_weaver.save_story(story_id)
+```
+
+This code defines a `StoryWeaverPro` class that uses a collaborative storytelling engine to allow multiple users to co-create stories in real-time. The `CollaborativeStorytellingEngine` class is responsible for managing the story creation and continuation processes. The example usage at the bottom demonstrates how to create a new story, continue it with additional parts, retrieve the story details, and save the story to a file.

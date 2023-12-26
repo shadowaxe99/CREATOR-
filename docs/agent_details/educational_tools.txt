@@ -1,0 +1,90 @@
+```python
+# Import necessary libraries
+from typing import Dict, List
+import json
+
+# Define the schema for educational tools
+class LearningResourceSchema:
+    def __init__(self, title: str, description: str, content: str, difficulty_level: str):
+        self.title = title
+        self.description = description
+        self.content = content
+        self.difficulty_level = difficulty_level
+
+    def to_dict(self) -> Dict:
+        return {
+            "title": self.title,
+            "description": self.description,
+            "content": self.content,
+            "difficulty_level": self.difficulty_level
+        }
+
+# Define the educational AI agents
+class EducationalAI:
+    def __init__(self, name: str, description: str, learning_resources: List[LearningResourceSchema]):
+        self.name = name
+        self.description = description
+        self.learning_resources = learning_resources
+
+    def add_resource(self, resource: LearningResourceSchema):
+        self.learning_resources.append(resource)
+
+    def get_resources(self) -> List[Dict]:
+        return [resource.to_dict() for resource in self.learning_resources]
+
+    def to_json(self) -> str:
+        return json.dumps({
+            "name": self.name,
+            "description": self.description,
+            "learning_resources": self.get_resources()
+        }, indent=4)
+
+# Instantiate the educational AI agents with initial data
+skill_sharpening_agent = EducationalAI(
+    name="Skill Sharpening Agent",
+    description="Offers personalized learning and skill development plans.",
+    learning_resources=[
+        LearningResourceSchema(
+            title="Introduction to Digital Art",
+            description="Learn the basics of digital art creation.",
+            content="Digital Art Course Content",
+            difficulty_level="Beginner"
+        )
+    ]
+)
+
+language_luminary = EducationalAI(
+    name="Language Luminary",
+    description="Facilitates language learning and translation services.",
+    learning_resources=[
+        LearningResourceSchema(
+            title="Spanish for Beginners",
+            description="Start your journey with the Spanish language.",
+            content="Spanish Language Course Content",
+            difficulty_level="Beginner"
+        )
+    ]
+)
+
+creative_coach = EducationalAI(
+    name="Creative Coach",
+    description="Provides tips and feedback on improving creative skills.",
+    learning_resources=[
+        LearningResourceSchema(
+            title="Creative Writing 101",
+            description="Unlock your potential in creative writing.",
+            content="Creative Writing Course Content",
+            difficulty_level="Intermediate"
+        )
+    ]
+)
+
+# Function to save the educational AI agents data to a file
+def save_educational_ai_data_to_file(file_path: str, *agents: EducationalAI):
+    data = [agent.to_json() for agent in agents]
+    with open(file_path, 'w') as file:
+        file.write("[\n" + ",\n".join(data) + "\n]")
+
+# Save the educational AI agents data to the specified file
+save_educational_ai_data_to_file('docs/agent_details/educational_tools.json', skill_sharpening_agent, language_luminary, creative_coach)
+```

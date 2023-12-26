@@ -1,0 +1,75 @@
+```python
+import random
+from typing import Dict, Any
+from vr_toolkit import VRToolkit
+
+class VRVisionaryAgent:
+    def __init__(self, user_preferences: Dict[str, Any]):
+        self.vr_toolkit = VRToolkit()
+        self.user_preferences = user_preferences
+        self.projects = []
+
+    def create_vr_experience(self, concept: str, complexity: int) -> Dict[str, Any]:
+        """
+        Create a virtual reality experience based on the user's concept and desired complexity.
+        """
+        vr_project = self.vr_toolkit.generate_experience(concept, complexity)
+        self.projects.append(vr_project)
+        return vr_project
+
+    def refine_experience(self, project_id: int, feedback: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Refine an existing VR experience based on user feedback.
+        """
+        project = self._find_project_by_id(project_id)
+        if project:
+            refined_project = self.vr_toolkit.refine_experience(project, feedback)
+            self._update_project(project_id, refined_project)
+            return refined_project
+        else:
+            raise ValueError("Project with the given ID does not exist.")
+
+    def _find_project_by_id(self, project_id: int) -> Dict[str, Any]:
+        """
+        Find a VR project by its ID.
+        """
+        for project in self.projects:
+            if project['id'] == project_id:
+                return project
+        return None
+
+    def _update_project(self, project_id: int, updated_project: Dict[str, Any]):
+        """
+        Update a VR project in the list of projects.
+        """
+        for i, project in enumerate(self.projects):
+            if project['id'] == project_id:
+                self.projects[i] = updated_project
+                break
+
+    def get_project_details(self, project_id: int) -> Dict[str, Any]:
+        """
+        Get details of a specific VR project.
+        """
+        project = self._find_project_by_id(project_id)
+        if project:
+            return project
+        else:
+            raise ValueError("Project with the given ID does not exist.")
+
+    def list_all_projects(self) -> list:
+        """
+        List all VR projects created by the agent.
+        """
+        return self.projects
+
+# Example usage:
+# user_prefs = {'genre': 'adventure', 'intensity': 'high'}
+# vr_agent = VRVisionaryAgent(user_preferences=user_prefs)
+# new_project = vr_agent.create_vr_experience(concept='Space Exploration', complexity=5)
+# updated_project = vr_agent.refine_experience(project_id=new_project['id'], feedback={'immersion': 'increase'})
+# project_details = vr_agent.get_project_details(project_id=new_project['id'])
+# all_projects = vr_agent.list_all_projects()
+```
+
+This code defines a `VRVisionaryAgent` class that uses a hypothetical `VRToolkit` to create and manage virtual reality experiences. The agent can create new experiences, refine them based on feedback, and manage a list of projects. The example usage at the bottom demonstrates how to instantiate the agent, create a new VR experience, refine it, and retrieve project details.

@@ -1,0 +1,74 @@
+```python
+import datetime
+from typing import List, Dict, Any
+
+class EventOrganizer:
+    def __init__(self, db_connection):
+        self.db = db_connection
+
+    def create_event(self, event_data: Dict[str, Any]) -> bool:
+        required_fields = ['title', 'description', 'start_time', 'end_time', 'organizer_id']
+        if not all(field in event_data for field in required_fields):
+            raise ValueError("Missing required event data fields.")
+        
+        if event_data['start_time'] >= event_data['end_time']:
+            raise ValueError("Event start time must be before end time.")
+        
+        self.db.insert('events', event_data)
+        return True
+
+    def update_event(self, event_id: int, update_data: Dict[str, Any]) -> bool:
+        if 'start_time' in update_data and 'end_time' in update_data:
+            if update_data['start_time'] >= update_data['end_time']:
+                raise ValueError("Event start time must be before end time.")
+        
+        self.db.update('events', update_data, {'id': event_id})
+        return True
+
+    def delete_event(self, event_id: int) -> bool:
+        self.db.delete('events', {'id': event_id})
+        return True
+
+    def get_event(self, event_id: int) -> Dict[str, Any]:
+        event = self.db.select('events', {'id': event_id})
+        if not event:
+            raise ValueError("Event not found.")
+        return event
+
+    def list_events(self, organizer_id: int = None, upcoming: bool = True) -> List[Dict[str, Any]]:
+        query_params = {}
+        if organizer_id is not None:
+            query_params['organizer_id'] = organizer_id
+        if upcoming:
+            query_params['end_time__gt'] = datetime.datetime.now()
+        return self.db.select_many('events', query_params)
+
+# Database connection placeholder
+class DatabaseConnection:
+    def insert(self, table: str, data: Dict[str, Any]):
+        pass  # Implement database insertion logic
+
+    def update(self, table: str, data: Dict[str, Any], conditions: Dict[str, Any]):
+        pass  # Implement database update logic
+
+    def delete(self, table: str, conditions: Dict[str, Any]):
+        pass  # Implement database deletion logic
+
+    def select(self, table: str, conditions: Dict[str, Any]) -> Dict[str, Any]:
+        pass  # Implement single record selection logic
+
+    def select_many(self, table: str, conditions: Dict[str, Any]) -> List[Dict[str, Any]]:
+        pass  # Implement multiple records selection logic
+
+# Example usage:
+# db_conn = DatabaseConnection()
+# event_organizer = EventOrganizer(db_conn)
+# event_data = {
+#     'title': 'AI Workshop',
+#     'description': 'A workshop on AI technologies',
+#     'start_time': datetime.datetime(2023, 5, 17, 10, 0),
+#     'end_time': datetime.datetime(2023, 5, 17, 12, 0),
+#     'organizer_id': 1
+# }
+# event_organizer.create_event(event_data)
+```

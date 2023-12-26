@@ -1,0 +1,3 @@
+# Objective of Elysium Marketplace
+
+The primary objective of the Elysium Marketplace is to establish a leading-edge, blockchain-powered platform that revolutionizes the creator economy. By integrating advanced AI technologies and leveraging the Arbitrum blockchain for enhanced transaction efficiency and security, the platform aims to democratize the creator economy. This will make it more accessible, profitable, and sustainable for creators and developers, addressing key issues such as copyright management, fair compensation, and transparent transactions.

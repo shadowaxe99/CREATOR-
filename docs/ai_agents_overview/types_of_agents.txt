@@ -1,0 +1,133 @@
+const AI_AGENT_TYPES = {
+  CONTENT_CREATION: [
+    {
+      name: 'AI Artisan',
+      description: 'Generates digital art based on user input.',
+      modulePath: 'ai_agents/content_creation/ai_artisan.js'
+    },
+    {
+      name: 'Story Weaver',
+      description: 'Crafts unique stories and scripts using AI-driven narrative techniques.',
+      modulePath: 'ai_agents/content_creation/story_weaver.js'
+    },
+    {
+      name: 'Music Maestro',
+      description: 'Composes music across various genres using AI algorithms.',
+      modulePath: 'ai_agents/content_creation/music_maestro.js'
+    },
+    {
+      name: 'Video Virtuoso',
+      description: 'Assists in video editing and effects generation.',
+      modulePath: 'ai_agents/content_creation/video_virtuoso.js'
+    }
+  ],
+  PRODUCTIVITY_ENHANCERS: [
+    {
+      name: 'Project Pilot',
+      description: 'Manages creative projects, tracking progress and deadlines.',
+      modulePath: 'ai_agents/productivity_enhancers/project_pilot.js'
+    },
+    {
+      name: 'Idea Incubator',
+      description: 'Generates and refines creative ideas and concepts.',
+      modulePath: 'ai_agents/productivity_enhancers/idea_incubator.js'
+    },
+    {
+      name: 'Editorial Assistant',
+      description: 'Provides grammar checking, style improvement, and content suggestions.',
+      modulePath: 'ai_agents/productivity_enhancers/editorial_assistant.js'
+    },
+    {
+      name: 'Data Detective',
+      description: 'Analyzes and interprets data for market trends and insights.',
+      modulePath: 'ai_agents/productivity_enhancers/data_detective.js'
+    }
+  ],
+  EDUCATIONAL_TOOLS: [
+    {
+      name: 'Skill Sharpening Agent',
+      description: 'Offers personalized learning and skill development plans.',
+      modulePath: 'ai_agents/educational_tools/skill_sharpening_agent.js'
+    },
+    {
+      name: 'Language Luminary',
+      description: 'Facilitates language learning and translation services.',
+      modulePath: 'ai_agents/educational_tools/language_luminary.js'
+    },
+    {
+      name: 'Creative Coach',
+      description: 'Provides tips and feedback on improving creative skills.',
+      modulePath: 'ai_agents/educational_tools/creative_coach.js'
+    }
+  ],
+  MARKETING_AND_SALES_ASSISTANTS: [
+    {
+      name: 'Market Maven',
+      description: 'Analyzes market trends and provides marketing strategies.',
+      modulePath: 'ai_agents/marketing_and_sales_assistants/market_maven.js'
+    },
+    {
+      name: 'Sales Strategist',
+      description: 'Offers sales advice and strategies for creators.',
+      modulePath: 'ai_agents/marketing_and_sales_assistants/sales_strategist.js'
+    },
+    {
+      name: 'Social Media Savant',
+      description: 'Manages and optimizes social media content and engagement.',
+      modulePath: 'ai_agents/marketing_and_sales_assistants/social_media_savant.js'
+    }
+  ],
+  COMMUNITY_AND_COLLABORATION_FACILITATORS: [
+    {
+      name: 'Collaboration Catalyst',
+      description: 'Helps find and connect with potential collaborators.',
+      modulePath: 'ai_agents/community_and_collaboration_facilitators/collaboration_catalyst.js'
+    },
+    {
+      name: 'Feedback Facilitator',
+      description: 'Gathers and organizes community feedback and suggestions.',
+      modulePath: 'ai_agents/community_and_collaboration_facilitators/feedback_facilitator.js'
+    },
+    {
+      name: 'Event Organizer',
+      description: 'Assists in planning and coordinating online events and workshops.',
+      modulePath: 'ai_agents/community_and_collaboration_facilitators/event_organizer.js'
+    }
+  ],
+  SPECIALIZED_CREATIVE_TOOLS: [
+    {
+      name: 'Fashion Forecaster',
+      description: 'Provides trends and designs in fashion.',
+      modulePath: 'ai_agents/specialized_creative_tools/fashion_forecaster.js'
+    },
+    {
+      name: 'Gameplay Guru',
+      description: 'Offers game design advice and testing feedback.',
+      modulePath: 'ai_agents/specialized_creative_tools/gameplay_guru.js'
+    },
+    {
+      name: 'VR Visionary',
+      description: 'Assists in creating virtual reality experiences.',
+      modulePath: 'ai_agents/specialized_creative_tools/vr_visionary.js'
+    },
+    {
+      name: '3D Model Maker',
+      description: 'Helps in creating and refining 3D models for various uses.',
+      modulePath: 'ai_agents/specialized_creative_tools/3d_model_maker.js'
+    }
+  ],
+  MISCELLANEOUS_AND_INNOVATIVE_AGENTS: [
+    {
+      name: 'Legal Liaison',
+      description: 'Offers basic legal guidance and copyright information for creators.',
+      modulePath: 'ai_agents/miscellaneous_and_innovative_agents/legal_liaison.js'
+    },
+    {
+      name: 'Wellness Watcher',
+      description: 'Provides mental health and wellness tips for creators in high-stress environments.',
+      modulePath: 'ai_agents/miscellaneous_and_innovative_agents/wellness_watcher.js'
+    }
+  ]
+};
+
+module.exports = AI_AGENT_TYPES;

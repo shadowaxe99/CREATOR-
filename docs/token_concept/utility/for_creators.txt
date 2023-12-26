@@ -1,0 +1,87 @@
+// ElysiumTokenUtilityForCreators.sol
+
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
+
+/**
+ * @title ElysiumTokenUtilityForCreators
+ * @dev This contract provides utility functions for creators to earn Elysium Tokens (ET)
+ * through sales, community contributions, and collaborations on the Elysium Marketplace.
+ */
+contract ElysiumTokenUtilityForCreators is Ownable, ReentrancyGuard {
+    IERC20 public elysiumToken;
+
+    // Mapping from creator's address to their earnings
+    mapping(address => uint256) private _creatorEarnings;
+
+    // Event that logs the reward of tokens to a creator
+    event TokensRewarded(address indexed creator, uint256 amount);
+
+    /**
+     * @dev Constructor for ElysiumTokenUtilityForCreators contract.
+     * @param tokenAddress Address of the Elysium Token (ET) contract.
+     */
+    constructor(address tokenAddress) {
+        require(tokenAddress != address(0), "ElysiumTokenUtilityForCreators: token address is the zero address");
+        elysiumToken = IERC20(tokenAddress);
+    }
+
+    /**
+     * @dev Function to reward creators with ET tokens for sales.
+     * @param creator Address of the creator to reward.
+     * @param amount Amount of ET tokens to reward.
+     */
+    function rewardSale(address creator, uint256 amount) external onlyOwner nonReentrant {
+        require(creator != address(0), "ElysiumTokenUtilityForCreators: creator address is the zero address");
+        require(amount > 0, "ElysiumTokenUtilityForCreators: reward amount must be greater than zero");
+
+        _creatorEarnings[creator] += amount;
+        elysiumToken.transfer(creator, amount);
+
+        emit TokensRewarded(creator, amount);
+    }
+
+    /**
+     * @dev Function to reward creators with ET tokens for community contributions.
+     * @param creator Address of the creator to reward.
+     * @param amount Amount of ET tokens to reward.
+     */
+    function rewardCommunityContribution(address creator, uint256 amount) external onlyOwner nonReentrant {
+        require(creator != address(0), "ElysiumTokenUtilityForCreators: creator address is the zero address");
+        require(amount > 0, "ElysiumTokenUtilityForCreators: reward amount must be greater than zero");
+
+        _creatorEarnings[creator] += amount;
+        elysiumToken.transfer(creator, amount);
+
+        emit TokensRewarded(creator, amount);
+    }
+
+    /**
+     * @dev Function to reward creators with ET tokens for collaborations.
+     * @param creator Address of the creator to reward.
+     * @param amount Amount of ET tokens to reward.
+     */
+    function rewardCollaboration(address creator, uint256 amount) external onlyOwner nonReentrant {
+        require(creator != address(0), "ElysiumTokenUtilityForCreators: creator address is the zero address");
+        require(amount > 0, "ElysiumTokenUtilityForCreators: reward amount must be greater than zero");
+
+        _creatorEarnings[creator] += amount;
+        elysiumToken.transfer(creator, amount);
+
+        emit TokensRewarded(creator, amount);
+    }
+
+    /**
+     * @dev Function to check the earnings of a creator.
+     * @param creator Address of the creator to check earnings for.
+     * @return The amount of ET tokens earned by the creator.
+     */
+    function checkEarnings(address creator) external view returns (uint256) {
+        require(creator != address(0), "ElysiumTokenUtilityForCreators: creator address is the zero address");
+        return _creatorEarnings[creator];
+    }
+}
