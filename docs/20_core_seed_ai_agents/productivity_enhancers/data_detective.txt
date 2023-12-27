@@ -92,7 +92,7 @@ class EnhancedDataDetectiveAI:
         return self.model.predict(new_data)
 
 # Example usage:
-# data_detective = DataDetectiveAI('path_to_dataset.csv')
+# data_detective = EnhancedEnhancedEnhancedDataDetectiveAI('path_to_dataset.csv')
 # data = data_detective.load_data()
 # data_detective.preprocess_data(data, 'target_column_name')
 # data_detective.train_model()

@@ -1,4 +1,4 @@
-```python
+```
 import json
 from typing import Dict, List, Any
 from sales_strategy_ai import SalesStrategyAI
