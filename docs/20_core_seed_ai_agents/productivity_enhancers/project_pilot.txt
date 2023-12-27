@@ -5,7 +5,7 @@ from user_schema import User
 from collaboration_schema import Collaboration
 from ai_agent_schema import AIAgent
 
-class ProjectPilot(AIAgent):
+class EnhancedProjectPilot(AIAgent):
     def __init__(self, agent_id, name, description):
         super().__init__(agent_id, name, description)
         self.projects = []
