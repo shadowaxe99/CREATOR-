@@ -7,7 +7,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.pipeline import Pipeline
 import joblib
 
-class DataDetectiveAI:
+class EnhancedDataDetectiveAI:
+    """
+    A class for data investigation and prediction using machine learning models.
+    """
     def __init__(self, data_source):
         self.data_source = data_source
         self.model = None
@@ -32,6 +35,9 @@ class DataDetectiveAI:
         )
 
     def train_model(self):
+        """
+        Train the model using a pipeline that standardizes the data and creates a model.
+        """
         # Create a pipeline that standardizes the data then creates a model
         pipeline = Pipeline([
             ('scaler', StandardScaler()),
@@ -43,6 +49,12 @@ class DataDetectiveAI:
         self.model = pipeline
 
     def evaluate_model(self):
+        """
+        Evaluate the model.
+        
+        Returns:
+            tuple: The classification report and accuracy score.
+        """
         # Predictions
         predictions = self.model.predict(self.X_test)
 
@@ -53,6 +65,12 @@ class DataDetectiveAI:
         return report, accuracy
 
     def save_model(self, file_path):
+        """
+        Save the trained model for later use.
+        
+        Args:
+            file_path (str): The file path to save the model.
+        """
         # Save the trained model for later use
         joblib.dump(self.model, file_path)
 
@@ -61,6 +79,15 @@ class DataDetectiveAI:
         self.model = joblib.load(file_path)
 
     def predict(self, new_data):
+        """
+        Make predictions on new data.
+        
+        Args:
+            new_data: The new data to make predictions on.
+        
+        Returns:
+            array: Predicted classes.
+        """
         # Make predictions on new data
         return self.model.predict(new_data)
 
